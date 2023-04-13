@@ -5,14 +5,19 @@
 -export([row/2, col/2, get/3]).
 -export([zeros/2, eye/1, diag/1]).
 -export([eval/1]).
+-export([matrix/1]).
 
 -export_type([matrix/0]).
 
--type matrix() :: [[number(), ...], ...].
+-type matrix() :: numerl:matrix().
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% API
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% create matrix
+matrix(M) ->
+    numerl:matrix(M).
 
 %% transpose matrix
 -spec tr(M) -> Transposed when
@@ -20,17 +25,17 @@
     Transposed :: matrix().
 
 tr(M) ->
-    tr(M, []).
+    numerl:transpose(M).
 
 
 %% matrix addition (M3 = M1 + M2)
 -spec '+'(M1, M2) -> M3 when
     M1 :: matrix(),
     M2 :: matrix(),
-    M3:: matrix().
+    M3 :: matrix().
 
 '+'(M1, M2) ->
-    element_wise_op(fun erlang:'+'/2, M1, M2).
+    numerl:add(M1,M2).
 
 
 %% matrix subtraction (M3 = M1 - M2)
@@ -40,7 +45,7 @@ tr(M) ->
     M3 :: matrix().
 
 '-'(M1, M2) ->
-    element_wise_op(fun erlang:'-'/2, M1, M2).
+    numerl:sub(M1,M2).
 
 
 %% matrix multiplication (M3 = Op1 * M2)
@@ -50,9 +55,9 @@ tr(M) ->
     M3 :: matrix().
 
 '*'(N, M) when is_number(N) ->
-    [[N*X|| X <- Row] || Row <- M];
+    numerl:mult(M,N);
 '*'(M1, M2) ->
-    '*´'(M1, tr(M2)).
+    numerl:dot(M1,M2).
 
 
 %% transposed matrix multiplication (M3 = M1 * tr(M2))
@@ -62,25 +67,16 @@ tr(M) ->
     M3 :: matrix().
 
 '*´'(M1, M2) ->
-    [[lists:sum(lists:zipwith(fun erlang:'*'/2, Li, Cj))
-        || Cj <- M2]
-        || Li <- M1].
+    numerl:dot(M1,tr(M2)).
 
 
-%% return true if M1 equals M2 using 1e-6 precision
+%% return true if M1 equals M2 
 -spec '=='(M1, M2) -> boolean() when
     M1 :: matrix(),
     M2 :: matrix().
 
 '=='(M1, M2) ->
-    case length(M1) == length(M2) of
-        true when length(hd(M1)) == length(hd(M2)) ->
-            RoundFloat = fun(F) -> round(F*1000000)/1000000 end,
-            CmpFloat = fun(F1, F2) -> RoundFloat(F1) == RoundFloat(F2) end, 
-            Eq = element_wise_op(CmpFloat, M1, M2),
-            lists:all(fun(Row) -> lists:all(fun(B) -> B end, Row) end, Eq);
-        false -> false
-    end.
+    numerl:equals(M1,M2).
 
 
 %% return the row I of M
@@ -90,7 +86,7 @@ tr(M) ->
     Row :: matrix().
 
 row(I, M) ->
-    [lists:nth(I, M)].
+    numerl:row(I,M).
 
 
 %% return the column J of M
@@ -100,7 +96,7 @@ row(I, M) ->
     Col :: matrix().
 
 col(J, M) ->
-    [[lists:nth(J, Row)] || Row <- M].
+    numerl:col(J,M).
 
 
 %% return the element at index (I,J) in M
@@ -111,7 +107,7 @@ col(J, M) ->
     Elem :: number().
 
 get(I, J, M) ->
-    lists:nth(J, lists:nth(I, M)).
+    numerl:get(I,J,M).
 
 
 %% return a null matrix of size NxM
@@ -121,7 +117,7 @@ get(I, J, M) ->
     Zeros :: matrix().
 
 zeros(N, M) ->
-    [[0 || _ <- lists:seq(1, M)] || _ <- lists:seq(1, N)].
+    numerl:zeros(N,M).
 
 
 %% return an identity matrix of size NxN
@@ -130,9 +126,7 @@ zeros(N, M) ->
     Identity :: matrix().
 
 eye(N) ->
-    [[ if I =:= J -> 1; true -> 0 end
-        || J <- lists:seq(1, N)]
-        || I <- lists:seq(1, N)].
+    numerl:eye(N).
 
 
 %% return a square diagonal matrix with the elements of L on the main diagonal
@@ -142,7 +136,8 @@ eye(N) ->
 
 diag(L) ->
     N = length(L),
-    diag(L, zeros(N, N), 0, []).
+    D = diag(L, [[0 || _ <- lists:seq(1, N)] || _ <- lists:seq(1, N)] , 0, []),
+    numerl:matrix(D).
 
 
 %% compute the inverse of a square matrix
@@ -151,10 +146,8 @@ diag(L) ->
     Invert :: matrix().
 
 inv(M) ->
-    N = length(M),
-    A = lists:zipwith(fun lists:append/2, M, eye(N)),
-    Gj = gauss_jordan(A, N, 0, 1),
-    [lists:nthtail(N, Row) || Row <- Gj].
+    %N = numerl:matrix(M),
+    numerl:inv(M).
 
 
 %% evaluate a list of matrix operations
@@ -172,76 +165,6 @@ eval([Res]) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Internal functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% transpose matrix with accumulator
-tr([[]|_], Rows) ->
-    lists:reverse(Rows);
-tr(M, Rows) ->
-    {Row, Cols} = tr(M, [], []),
-    tr(Cols, [Row|Rows]).
-
-
-%% transpose the first row of a matrix with accumulators
-tr([], Col, Cols) ->
-    {lists:reverse(Col), lists:reverse(Cols)};
-tr([[H|T]|Rows], Col, Cols) ->
-    tr(Rows, [H|Col], [T|Cols]).
-
-
-%% apply Op element wise on matrices M1 and M2
-element_wise_op(Op, M1, M2) ->
-    lists:zipwith(fun(L1, L2) -> lists:zipwith(Op, L1, L2) end, M1, M2).
-
-
-%% Gauss-Jordan method from
-%% https://fr.wikipedia.org/wiki/%C3%89limination_de_Gauss-Jordan#Pseudocode
-gauss_jordan(A, N, _, J) when J > N ->
-    A;
-gauss_jordan(A, N, R, J) ->
-    case pivot(col(J, lists:nthtail(R, A)), R+1, {0, 0}) of
-        {_, 0} ->
-            gauss_jordan(A, N, R, J+1);
-        {K, Pivot} ->
-            A2 = swap(K, R+1, A),
-            [Row] = row(R+1, A2),
-            Norm = lists:map(fun(E) -> E/Pivot end, Row),
-            A3 = gauss_jordan_aux(A2, {R+1, J}, Norm, 1, []),
-            gauss_jordan(A3, N, R+1, J+1)
-    end.
-
-
-%% Matrix(i, :) -= Matrix(i, j)/Pivot * Matrix(R, :) forall i\{R}
-%% Matrix(R, :) *= 1/Pivot
-%% with Pivot = Matrix(R, j)
-gauss_jordan_aux([], _, _, _, Acc) ->
-    lists:reverse(Acc);
-gauss_jordan_aux([_|Rows], {I, J}, L, I, Acc)->
-    gauss_jordan_aux(Rows, {I, J}, L, I+1, [L|Acc]);
-gauss_jordan_aux([Row|Rows], {R, J}, L, I, Acc) ->
-    F = lists:nth(J, Row),
-    NewRow = lists:zipwith(fun(A, B) -> A-F*B end, Row, L),
-    gauss_jordan_aux(Rows, {R, J}, L, I+1, [NewRow|Acc]).
-
-
-%% find the gauss jordan pivot of a column
-pivot([], _, Pivot) ->
-    Pivot;
-pivot([[H]|T], I, {_, V}) when abs(H) >= abs(V) ->
-    pivot(T, I+1, {I, H});
-pivot([_|T], I, Pivot) ->
-    pivot(T, I+1, Pivot).
-
-
-%% swap two indexes of a list
-%% taken from https://stackoverflow.com/a/64024907
-swap(A, A, List) ->
-    List;
-swap(A, B, List) ->
-    {P1, P2} = {min(A,B), max(A,B)},
-    {L1, [Elem1 | T1]} = lists:split(P1-1, List),
-    {L2, [Elem2 | L3]} = lists:split(P2-P1-1, T1), 
-    lists:append([L1, [Elem2], L2, [Elem1], L3]).
-
 
 %% build a diagonal matrix from a zero matrix
 diag([], [], _, Acc) ->
