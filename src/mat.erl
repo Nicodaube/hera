@@ -5,7 +5,7 @@
 -export([row/2, col/2, get/3]).
 -export([zeros/2, eye/1, diag/1]).
 -export([eval/1]).
--export([matrix/1]).
+-export([matrix/1,to_array/1]).
 
 -export_type([matrix/0]).
 
@@ -18,6 +18,10 @@
 %% create matrix
 matrix(M) ->
     numerl:matrix(M).
+
+%% returns an array
+to_array(M) ->
+    numerl:mtfl(M).
 
 %% transpose matrix
 -spec tr(M) -> Transposed when

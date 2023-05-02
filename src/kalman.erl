@@ -28,7 +28,7 @@ kf_update({Xp, Pp}, H, R, Z) ->
     {X1, P1}.
 
 
-%% An extended kalman filter without control input
+%% An extended kalman filter without control input, [X0, P0, Q, R, Z] must be mat matrices, [F, Jf, H, Jh] must be functions
 ekf({X0, P0}, {F, Jf}, {H, Jh}, Q, R, Z) ->
     % Prediction
     Xp = F(X0),
