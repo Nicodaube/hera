@@ -7,4 +7,4 @@ hera_synchronization is an extension to hera. The orignial repository is:
 https://github.com/bastinjul/hera_synchronization. The new version (1.0.0) can
 be found at https://github.com/sebkm/hera_synchronization.
 
-For more information, please visit https://github.com/sebkm/sensor_fusion.
+For more information, please visit https://github.com/lunelis/sensor_fusion.
