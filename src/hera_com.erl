@@ -2,6 +2,7 @@
 
 -export([start_link/0]).
 -export([send/3]).
+-export([encode_half_float/1,decode_half_float/1]).
 
 -define(MULTICAST_ADDR, {224,0,2,15}).
 -define(MULTICAST_PORT, 62476).
@@ -26,8 +27,22 @@ send(Name, Seq, Values) ->
     try ?MODULE ! {send_packet, term_to_binary(Message)}
     catch
         error:_ -> ok
-    end,
+	end,
     ok.
+
+%
+%Encodes a list of values from double (8 bytes) to half-float (2 bytes)
+%Values = [Double1,Double2,...]
+%
+encode_half_float(Values) -> 
+	lists:map(fun(X) -> enc_hf(X) end, Values).
+
+%
+%Decodes a list of values from half-float (2 bytes) to double (8 bytes)
+%Values = [Half_float1,Half_float2,...]
+%
+encode_half_float(Values) -> 
+	lists:map(fun(X) -> dec_hf(X) end, Values).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Internal functions
@@ -84,3 +99,32 @@ loop(Socket) ->
             ok
     end,
     loop(Socket).
+
+
+%Encodes one value from a double to a half-float
+enc_hf(Double) ->
+	<<_,_,A,B,C,_,_,_,_,_>>=term_to_binary(Double),
+	A2 = (A band 192) bor ((B bsr 2) band 63),
+	B2 = ((B bsl 6) band 192) bor ((C bsr 2) band 63),
+	<<A2,B2>>.
+
+%Decodes one value from a double to a half-float
+dec_hf(Half_Float) ->
+	<<X,Y>> = Half_Float,
+	A = (X band 192),
+	B = ((X bsl 2) band 252) bor ((Y bsr 6) band 3),
+	C = ((Y bsl 2) band 252),
+	binary_to_term(<<131,70,A,B,C,0,0,0,0,0>>).
+
+
+
+
+
+
+
+
+
+
+
+
+

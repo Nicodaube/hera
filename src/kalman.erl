@@ -1,7 +1,7 @@
 -module(kalman).
 
 -export([kf_predict/3, kf_update/4]).
--export([kf/6, ekf/6]).
+-export([kf/6, ekf/6, ekf_control/7]).
 
 %% see https://en.wikipedia.org/wiki/Kalman_filter
 
@@ -32,6 +32,23 @@ kf_update({Xp, Pp}, H, R, Z) ->
 ekf({X0, P0}, {F, Jf}, {H, Jh}, Q, R, Z) ->
     % Prediction
     Xp = F(X0),
+    Jfx = Jf(X0),
+    Pp = mat:eval([Jfx, '*', P0, '*´', Jfx, '+', Q]),
+
+    % Update
+    Jhx = Jh(Xp),
+    S = mat:eval([Jhx, '*', Pp, '*´', Jhx, '+', R]),
+    Sinv = mat:inv(S),
+    K = mat:eval([Pp, '*´', Jhx, '*', Sinv]),
+    Y = mat:'-'(Z, H(Xp)),
+    X1 = mat:eval([K, '*', Y, '+', Xp]),
+    P1 = mat:'-'(Pp, mat:eval([K, '*', Jhx, '*', Pp])),
+    {X1, P1}.
+
+%% Same function as ekf/
+ekf_control({X0, P0}, {F, Jf}, {H, Jh}, Q, R, Z, U) -> 
+    % Prediction
+    Xp = F(X0,U),
     Jfx = Jf(X0),
     Pp = mat:eval([Jfx, '*', P0, '*´', Jfx, '+', Q]),
 
