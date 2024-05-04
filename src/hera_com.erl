@@ -41,7 +41,7 @@ encode_half_float(Values) ->
 %Decodes a list of values from half-float (2 bytes) to double (8 bytes)
 %Values = [Half_float1,Half_float2,...]
 %
-encode_half_float(Values) -> 
+decode_half_float(Values) -> 
 	lists:map(fun(X) -> dec_hf(X) end, Values).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
