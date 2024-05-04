@@ -110,8 +110,13 @@ enc_hf(Double) ->
 
 %Decodes one value from a double to a half-float
 dec_hf(Half_Float) ->
-	<<X,Y>> = Half_Float,
-	A = (X band 192),
+	<<X,Y>> = Half_Float,	
+	if
+		(X band 64) == 0 ->
+			A = (X band 192) bor 63;
+		true ->
+			A = (X band 192)
+	end,
 	B = ((X bsl 2) band 252) bor ((Y bsr 6) band 3),
 	C = ((Y bsl 2) band 252),
 	binary_to_term(<<131,70,A,B,C,0,0,0,0,0>>).
