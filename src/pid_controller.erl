@@ -9,7 +9,7 @@ pid({Kp, Ki, Kd}, {Ierr0, Derr0}, Set_Point, Measure, Dt) ->
     Derr1 = (Error-Derr0)/Dt,
 
     Command = Kp * Error + Ki * Ierr1 + Kd * Derr1,
-    {Command, {Ierr1, Err}}.
+    {Command, {Ierr1, Error}}.
 
 
 
