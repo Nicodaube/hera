@@ -1,4 +1,4 @@
-% -module(controller).
+-module(controller).
 
 % -export([pid/5]).
 
