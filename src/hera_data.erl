@@ -118,7 +118,7 @@ file_name(Name, Node) ->
 
 
 log_data(_, _, _) ->
-    ok;
+    ok.
 
 % log_data(_, _, false) ->
 %     ok;
