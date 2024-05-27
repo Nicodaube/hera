@@ -61,7 +61,7 @@ open_socket(Delay) ->
             io:format("Could not open socket:~p~n", [Reason]),
             io:format("Retrying in ~p [s]~n", [Delay]),
             timer:sleep(Delay*1000),
-            open_socket(min(2*Delay, 60))
+            open_socket(min(2*Delay, 4))
     end.
 
 
