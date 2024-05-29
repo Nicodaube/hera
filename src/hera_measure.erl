@@ -6,7 +6,8 @@
     name := atom(), % measure id
     iter := pos_integer() | infinity, % number of measures to perform
     sync => boolean(), % must the measure must be synchronized? (default: false)
-    timeout => timeout() % min delay between two measures (default: 1)
+    timeout => timeout(), % min delay between two measures (default: 1)
+    disable_com => boolean() % In case of only 1 GRiSP, better perf without communication (default: false)
 }.
 
 -export_type([measure_spec/0]).
@@ -22,6 +23,7 @@
 -record(state, {
     name :: atom(),
     sync = false :: boolean(),
+    disable_com = false :: boolean(),
     monitor :: {pid(), reference()} | undefined,
     timeout = 1 :: timeout(),
     seq = 1 :: pos_integer(),
@@ -102,12 +104,17 @@ init_seq(Name) ->
     lists:max([0|L]) + 1.
 
 
-measure(State=#state{name=N, mod=M, mod_state=MS, seq=Seq, iter=Iter}) ->
+measure(State=#state{name=N, mod=M, mod_state=MS, seq=Seq, iter=Iter, disable_com=DC}) ->
     case M:measure(MS) of
         {undefined, NewMS} ->
             State#state{mod_state=NewMS};
         {ok, Vals=[_|_], NewMS} ->
-            % hera_com:send(N, Seq, Vals),
+            if 
+                not disable_com -> 
+                    hera_com:send(N, Seq, Vals);
+                true -> 
+                    ok
+            end,
             NewIter = case Iter of
                 infinity -> Iter;
                 _ -> Iter-1
