@@ -2,6 +2,7 @@
 
 % -export([pid/5]).
 -export([init/1]).
+-export([controller/1]).
 
 -define(Speed_Limit, 50).
 -define(Angle_Coef, -0.7).
