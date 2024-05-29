@@ -4,10 +4,10 @@
 -export([init/1]).
 
 -define(Speed_Limit, 50).
--define(Angle_Coef, 50).
--define(Dist_Coef, 50).
--define(Speed_Coef, 50).
--define(Angle_Rate_Coef, 50).
+-define(Angle_Coef, -0.7).
+-define(Dist_Coef, 0).
+-define(Speed_Coef, 2).
+-define(Angle_Rate_Coef, 7).
 -define(Coef_Filter, 0.667).
 -define(K, 0.97).
 
