@@ -69,6 +69,10 @@ saturation(Input, Bound) ->
 
 compute_angle({Ax,Az,Gy,Dt}) ->
 
+    io:format("~p, ~p~n",[ets:lookup(variables, "DC_bias"),ets:lookup(variables, "Angle_Rate")]),
+    io:format("~p~n",[Gy - ets:lookup(variables, "DC_bias")]),
+    io:format("~p~n",[1 - ?Coef_Filter]),
+
     %low pass filter on derivative
     AR = (Gy - ets:lookup(variables, "DC_bias")) * ?Coef_Filter + ets:lookup(variables, "Angle_Rate") * (1 - ?Coef_Filter),
     ets:insert(variables, {"Angle_Rate", AR}),
