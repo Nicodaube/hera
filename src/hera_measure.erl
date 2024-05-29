@@ -110,7 +110,7 @@ measure(State=#state{name=N, mod=M, mod_state=MS, seq=Seq, iter=Iter, disable_co
             State#state{mod_state=NewMS};
         {ok, Vals=[_|_], NewMS} ->
             if 
-                not disable_com -> 
+                not DC -> 
                     hera_com:send(N, Seq, Vals);
                 true -> 
                     ok
