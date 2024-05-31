@@ -47,12 +47,18 @@ controller(Measures) ->
 
 
 balance_controller() ->
+
+    [{_,Offset}] = ets:lookup(variables, "Offset"),
+    [{_,Angle_Rate}] = ets:lookup(variables, "Angle_Rate"),
+    [{_,Angle}] = ets:lookup(variables, "Angle"),
+    [{_,SpeedCommand}] = ets:lookup(variables, "SpeedCommand"),
+
     Distance_saturated = 0, %saturation((distances[0] + distances[2]) / 2, 20),
-    AngleRateError = (ets:lookup(variables, "Angle") + ets:lookup(variables, "Offset") + ?Angle_Rate_Coef * ets:lookup(variables, "Angle_Rate")),
+    AngleRateError = (Angle + Offset + ?Angle_Rate_Coef * Angle_Rate),
 
     Acc_comm = (?Angle_Coef * AngleRateError
                          + ?Dist_Coef * Distance_saturated
-                         + ?Speed_Coef * ets:lookup(variables, "SpeedCommand")),
+                         + ?Speed_Coef * SpeedCommand),
     Acc_comm.
 
 
@@ -69,44 +75,33 @@ saturation(Input, Bound) ->
 
 compute_angle({Ax,Az,Gy,Dt}) ->
 
-    io:format("~p, ~p~n",[ets:lookup(variables, "DC_Bias"),ets:lookup(variables, "Angle_Rate")]),
-    io:format("~p~n",[Gy - ets:lookup(variables, "DC_Bias")]),
-    io:format("~p~n",[1 - ?Coef_Filter]),
+    % io:format("~p, ~p~n",[ets:lookup(variables, "DC_Bias"),ets:lookup(variables, "Angle_Rate")]),
+    % io:format("~p~n",[Gy - ets:lookup(variables, "DC_Bias")]),
+    % io:format("~p~n",[1 - ?Coef_Filter]),
+
+    [{_,DC_Bias}] = ets:lookup(variables, "DC_Bias"),
+    [{_,Angle_Rate}] = ets:lookup(variables, "Angle_Rate"),
+    [{_,Angle}] = ets:lookup(variables, "Angle"),
 
     %low pass filter on derivative
-    AR = (Gy - ets:lookup(variables, "DC_Bias")) * ?Coef_Filter + ets:lookup(variables, "Angle_Rate") * (1 - ?Coef_Filter),
+    AR = (Gy - DC_Bias) * ?Coef_Filter + Angle_Rate * (1 - ?Coef_Filter),
     ets:insert(variables, {"Angle_Rate", AR}),
 
     %complementary filter
     Delta_Gyr = AR * Dt,
     Angle_Acc = math:atan(Ax / Az) * 180 / math:pi(),
-    New_Angle = (ets:lookup(variables, "Angle") + Delta_Gyr) * ?K + (1 - ?K) * Angle_Acc,
+    New_Angle = (Angle + Delta_Gyr) * ?K + (1 - ?K) * Angle_Acc,
     ets:insert(variables, {"Angle", New_Angle}),
     ok.
 
-    % io:format("~p, ~p~n",[ets:lookup(variables, "DC_Bias"),ets:lookup(variables, "Angle_Rate")]),
-    % io:format("~p~n",[Gy - ets:lookup(variables, "DC_Bias")]),
-    % io:format("~p~n",[1 - ?Coef_Filter]),
-
-    % [{_,DC_Bias}] = ets:lookup(variables, "DC_Bias"),
-    % [{_,Angle_Rate}] = ets:lookup(variables, "Angle_Rate"),
-    % [{_,Angle}] = ets:lookup(variables, "Angle"),
-
-    % %low pass filter on derivative
-    % AR = (Gy - DC_Bias) * ?Coef_Filter + Angle_Rate * (1 - ?Coef_Filter),
-    % ets:insert(variables, {"Angle_Rate", AR}),
-
-    % %complementary filter
-    % Delta_Gyr = AR * Dt,
-    % Angle_Acc = math:atan(Ax / Az) * 180 / math:pi(),
-    % New_Angle = (Angle + Delta_Gyr) * ?K + (1 - ?K) * Angle_Acc,
-    % ets:insert(variables, {"Angle", New_Angle}),
-    % ok.
-
 
 compute_angle_offset() ->
-    A = ets:lookup(variables, "Angle"),
-    OS = (( A + ets:lookup(variables, "Offset")) * 999.9 / 1000) - A,
+
+    %Retreive values from table
+    [{_,Angle}] = ets:lookup(variables, "Angle"),
+    [{_,Offset}] = ets:lookup(variables, "Offset"),
+
+    OS = (( Angle + Offset) * 999.9 / 1000) - Angle,
     ets:insert(variables, {"Offset", OS}),
     ok.
 
