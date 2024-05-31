@@ -4,11 +4,11 @@
 -export([init/1]).
 -export([controller/1]).
 
--define(Speed_Limit, 50).
+-define(Speed_Limit, 50.0).
 -define(Angle_Coef, -0.7).
--define(Dist_Coef, 0).
--define(Speed_Coef, 2).
--define(Angle_Rate_Coef, 7).
+-define(Dist_Coef, 0.0).
+-define(Speed_Coef, 2.0).
+-define(Angle_Rate_Coef, 7.0).
 -define(Coef_Filter, 0.667).
 -define(K, 0.97).
 
@@ -53,7 +53,7 @@ balance_controller() ->
     [{_,Angle}] = ets:lookup(variables, "Angle"),
     [{_,SpeedCommand}] = ets:lookup(variables, "SpeedCommand"),
 
-    Distance_saturated = 0, %saturation((distances[0] + distances[2]) / 2, 20),
+    Distance_saturated = 0.0, %saturation((distances[0] + distances[2]) / 2, 20),
     AngleRateError = (Angle + Offset + ?Angle_Rate_Coef * Angle_Rate),
 
     Acc_comm = (?Angle_Coef * AngleRateError
