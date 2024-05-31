@@ -40,7 +40,7 @@ controller(Measures) ->
     compute_angle_offset(),
 
     Acc = balance_controller(),
-    io:format("Acc command: ~p~n",[Acc]),
+    % io:format("Acc command: ~p~n",[Acc]),
     Acc.
 
 
