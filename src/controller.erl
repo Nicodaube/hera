@@ -5,7 +5,7 @@
 -export([controller/1]).
 
 -export([modif_coef/1]).
--export([print_coef/0]).
+-export([print_coef/0, pause_ctrl/1]).
 
 -define(Speed_Limit, 50.0).
 -define(Dist_Coef, 0.0).
@@ -35,6 +35,7 @@ init({Cal}) ->
     ets:insert(variables, {"Angle_Coef_P", 0}),
     ets:insert(variables, {"Angle_Coef_I", 0}),
     ets:insert(variables, {"Angle_Coef_D", 0}),
+    ets:insert(variables, {"Reset", 0}),
     ok.
 
 
@@ -46,9 +47,18 @@ controller(Measures) ->
     compute_angle(Measures),
     compute_angle_offset(),
 
+    [{_,Reset}] = ets:lookup(variables, "Reset"),
+
     Acc = balance_controller(),
     % io:format("Acc command: ~p~n",[Acc]),
-    Acc.
+    {Acc, Reset}.
+
+
+pause_ctrl(R) ->
+    [{_,Angle}] = ets:lookup(variables, "Angle"),
+    ets:insert(variables, {"Reset", R}),
+    ets:insert(variables, {"Offset", Angle}),
+    ok.
 
 
 modif_coef({P,I,D}) ->
