@@ -4,13 +4,19 @@
 -export([init/1]).
 -export([controller/1]).
 
+-export([modif_coef/1]).
+-export([print_coef/0]).
+
 -define(Speed_Limit, 50.0).
--define(Angle_Coef, -0.7).
 -define(Dist_Coef, 0.0).
 -define(Speed_Coef, 2.0).
--define(Angle_Rate_Coef, 7.0).
+% -define(Angle_Coef_P, -0.7).
+% -define(Angle_Coef_I, -0.7).
+% -define(Angle_Coef_D, -4.9).
 -define(Coef_Filter, 0.667).
 -define(K, 0.97).
+-define(Angle_Int_Coef, 1.0).
+
 
 %Une fois qu'on a de bons coeffs on peut tous les def avec un "-define()" pour plus d'efficacité
 
@@ -25,10 +31,11 @@ init({Cal}) ->
     ets:insert(variables, {"DC_Bias", Cal}),
     ets:insert(variables, {"Offset", 0}),
     ets:insert(variables, {"Bus", I2Cbus}),
+    ets:insert(variables, {"AngleInt", 0}),
+    ets:insert(variables, {"Angle_Coef_P", 0}),
+    ets:insert(variables, {"Angle_Coef_I", 0}),
+    ets:insert(variables, {"Angle_Coef_D", 0}),
     ok.
-
-    
-    
 
 
 controller(Measures) ->
@@ -44,6 +51,17 @@ controller(Measures) ->
     Acc.
 
 
+modif_coef({P,I,D}) ->
+    ets:insert(variables, {"Angle_Coef_P", P}),
+    ets:insert(variables, {"Angle_Coef_I", I}),
+    ets:insert(variables, {"Angle_Coef_D", D}).
+
+print_coef() ->
+    [{_,P}] = ets:lookup(variables, "Angle_Coef_P"),
+    [{_,I}] = ets:lookup(variables, "Angle_Coef_I"),
+    [{_,D}] = ets:lookup(variables, "Angle_Coef_D"),
+    io:format("Coefs: ~p, ~p, ~p~n",[P,I,D]),
+    ok.
 
 
 balance_controller() ->
@@ -52,11 +70,17 @@ balance_controller() ->
     [{_,Angle_Rate}] = ets:lookup(variables, "Angle_Rate"),
     [{_,Angle}] = ets:lookup(variables, "Angle"),
     [{_,SpeedCommand}] = ets:lookup(variables, "SpeedCommand"),
+    [{_,AngleInt}] = ets:lookup(variables, "AngleInt"),
 
     Distance_saturated = 0.0, %saturation((distances[0] + distances[2]) / 2, 20),
-    AngleRateError = (Angle + Offset + ?Angle_Rate_Coef * Angle_Rate),
+    % AngleRateError = (Angle + Offset) * ?Angle_Coef_P + (AngleInt) * ?Angle_Coef_I + (Angle_Rate) * ?Angle_Coef_D,
 
-    Acc_comm = (?Angle_Coef * AngleRateError
+    [{_,P}] = ets:lookup(variables, "Angle_Coef_P"),
+    [{_,I}] = ets:lookup(variables, "Angle_Coef_I"),
+    [{_,D}] = ets:lookup(variables, "Angle_Coef_D"),
+    AngleRateError = (Angle + Offset) * P + (AngleInt) * I + (Angle_Rate) * D,
+
+    Acc_comm = ( AngleRateError
                          + ?Dist_Coef * Distance_saturated
                          + ?Speed_Coef * SpeedCommand),
     Acc_comm.
@@ -82,6 +106,7 @@ compute_angle({Ax,Az,Gy,Dt}) ->
     [{_,DC_Bias}] = ets:lookup(variables, "DC_Bias"),
     [{_,Angle_Rate}] = ets:lookup(variables, "Angle_Rate"),
     [{_,Angle}] = ets:lookup(variables, "Angle"),
+    [{_,AngleInt}] = ets:lookup(variables, "AngleInt"),
 
     %low pass filter on derivative
     AR = (Gy - DC_Bias) * ?Coef_Filter + Angle_Rate * (1 - ?Coef_Filter),
@@ -90,8 +115,13 @@ compute_angle({Ax,Az,Gy,Dt}) ->
     %complementary filter
     Delta_Gyr = AR * Dt,
     Angle_Acc = math:atan(Ax / Az) * 180 / math:pi(),
-    New_Angle = (Angle + Delta_Gyr) * ?K + (1 - ?K) * Angle_Acc,
+    New_Angle = (Angle + Delta_Gyr) * ?K + (1 - ?K) * Angle_Acc, %P
     ets:insert(variables, {"Angle", New_Angle}),
+
+    New_Angle_Int = AngleInt + New_Angle*Dt, %I
+    ets:insert(variables, {"AngleInt", New_Angle_Int}),
+
+
     ok.
 
 
