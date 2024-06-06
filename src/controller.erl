@@ -24,7 +24,7 @@
 init({Cal}) ->
     I2Cbus = grisp_i2c:open(i2c1),
 
-    ets:new(variables, [set, named_table]),
+    ets:new(variables, [set, public, named_table]),
     ets:insert(variables, {"SpeedCommand", 0}),
     ets:insert(variables, {"Angle_Rate", 0}),
     ets:insert(variables, {"Angle", 0}),
@@ -54,7 +54,8 @@ controller(Measures) ->
 modif_coef({P,I,D}) ->
     ets:insert(variables, {"Angle_Coef_P", P}),
     ets:insert(variables, {"Angle_Coef_I", I}),
-    ets:insert(variables, {"Angle_Coef_D", D}).
+    ets:insert(variables, {"Angle_Coef_D", D}),
+    ok.
 
 print_coef() ->
     [{_,P}] = ets:lookup(variables, "Angle_Coef_P"),
