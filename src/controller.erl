@@ -35,7 +35,7 @@ init({Cal}) ->
     ets:insert(variables, {"Angle_Coef_P", 0}),
     ets:insert(variables, {"Angle_Coef_I", 0}),
     ets:insert(variables, {"Angle_Coef_D", 0}),
-    ets:insert(variables, {"Reset", 0}),
+    ets:insert(variables, {"Reset", 0.0}),
     ok.
 
 
