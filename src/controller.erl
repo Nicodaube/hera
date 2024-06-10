@@ -10,9 +10,9 @@
 -define(Speed_Limit, 50.0).
 -define(Dist_Coef, 0.0).
 -define(Speed_Coef, 2.0).
-% -define(Angle_Coef_P, -0.7).
-% -define(Angle_Coef_I, -0.7).
-% -define(Angle_Coef_D, -4.9).
+% -define(Angle_Coef_P, 0.7).
+% -define(Angle_Coef_I, 0.7).
+% -define(Angle_Coef_D, 4.9).
 -define(Coef_Filter, 0.667).
 -define(K, 0.97).
 -define(Angle_Int_Coef, 1.0).
@@ -50,7 +50,7 @@ controller(Measures) ->
 
     [{_,Reset}] = ets:lookup(variables, "Reset"),
 
-    Acc = balance_controller(),
+    Acc = balance_controller(Dt),
     % io:format("Acc command: ~p~n",[Acc]),
     {Acc, Reset}.
 
@@ -73,11 +73,12 @@ print_coef() ->
     [{_,P}] = ets:lookup(variables, "Angle_Coef_P"),
     [{_,I}] = ets:lookup(variables, "Angle_Coef_I"),
     [{_,D}] = ets:lookup(variables, "Angle_Coef_D"),
-    io:format("Coefs: ~p, ~p, ~p~n",[P,I,D]),
+    [{_,F}] = ets:lookup(variables, "Offset_Coef"),
+    io:format("Coefs: ~p, ~p, ~p~n",[P,I,D,F]),
     ok.
 
 
-balance_controller() ->
+balance_controller(Dt) ->
 
     [{_,Offset}] = ets:lookup(variables, "Offset"),
     [{_,Angle_Rate}] = ets:lookup(variables, "Angle_Rate"),
@@ -91,11 +92,17 @@ balance_controller() ->
     [{_,P}] = ets:lookup(variables, "Angle_Coef_P"),
     [{_,I}] = ets:lookup(variables, "Angle_Coef_I"),
     [{_,D}] = ets:lookup(variables, "Angle_Coef_D"),
-    AngleRateError = (Angle + Offset) * P + (AngleInt) * I + (Angle_Rate) * D,
+    % AngleRateError = (Angle + Offset) * P + (AngleInt) * I + (Angle_Rate) * D,
+    ErrorP = (Offset-Angle),
+    ErrorI = AngleInt + ErrorP * Dt,
+    ErrorD = -Angle_Rate,
 
-    io:format("~.3f, ~.3f~n",[Angle, Offset]),
+    %io:format("~.3f, ~.3f~n",[Angle, Offset]),
 
-    Acc_comm = ( AngleRateError
+    PID_output = P*ErrorP + I*ErrorI + D*ErrorD,
+    ets:insert(variables, {"AngleInt", ErrorI}),
+
+    Acc_comm = ( PID_output
                          + ?Dist_Coef * Distance_saturated
                          + ?Speed_Coef * SpeedCommand),
     Acc_comm.
@@ -127,14 +134,17 @@ compute_angle({Ax,Az,Gy,Dt}) ->
     New_Angle_Rate = (Gy - DC_Bias) * ?Coef_Filter + Angle_Rate * (1 - ?Coef_Filter), %D
     ets:insert(variables, {"Angle_Rate", New_Angle_Rate}),
 
-    %complementary filter
+    %Delta angle computed from gyro
     Delta_Gyr = New_Angle_Rate * Dt,
+    %Absolute angle computed form accelerometer
     Angle_Acc = math:atan(Ax / Az) * 180 / math:pi(),
-    New_Angle = (Angle + Delta_Gyr) * ?K + (1 - ?K) * Angle_Acc, %P
+
+    %complementary filter
+    New_Angle = (Angle + Delta_Gyr) * ?K + (1 - ?K) * Angle_Acc, 
     ets:insert(variables, {"Angle", New_Angle}),
 
-    New_Angle_Int = AngleInt + New_Angle*Dt, %I
-    ets:insert(variables, {"AngleInt", New_Angle_Int}),
+    %New_Angle_Int = AngleInt + New_Angle*Dt, %I
+    %ets:insert(variables, {"AngleInt", New_Angle_Int}),
 
 
     ok.
@@ -146,8 +156,10 @@ compute_angle_offset() ->
     [{_,Angle}] = ets:lookup(variables, "Angle"),
     [{_,Offset}] = ets:lookup(variables, "Offset"),
     [{_,Offset_Coef}] = ets:lookup(variables, "Offset_Coef"),
-
-    New_Offset = (( Angle + Offset) * Offset_Coef) - Angle,
+    % New_Offset = ( Offset -Angle) * Offset_Coef + Angle
+    % New_Offset = (( Angle - Offset) * Offset_Coef) - Angle,
+    %New_Offset = (Offset_Coef - 1) * Angle - Offset_Coef * Offset,
+    New_Offset = ( Offset -Angle) * Offset_Coef + Angle,
     ets:insert(variables, {"Offset", New_Offset}),
     ok.
 
