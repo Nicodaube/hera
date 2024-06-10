@@ -91,7 +91,7 @@ balance_controller() ->
     [{_,D}] = ets:lookup(variables, "Angle_Coef_D"),
     AngleRateError = (Angle + Offset) * P + (AngleInt) * I + (Angle_Rate) * D,
 
-    io:format("~p, ~p~n",[Angle, Offset]),
+    io:format("~.3f, ~.3f~n",[Angle, Offset]),
 
     Acc_comm = ( AngleRateError
                          + ?Dist_Coef * Distance_saturated
