@@ -35,7 +35,7 @@ init({Cal}) ->
     ets:insert(variables, {"Angle_Coef_P", 0}),
     ets:insert(variables, {"Angle_Coef_I", 0}),
     ets:insert(variables, {"Angle_Coef_D", 0}),
-    ets:insert(variables, {"Reset", 0.0}),
+    ets:insert(variables, {"Reset", 1.0}),
     ok.
 
 
@@ -91,6 +91,8 @@ balance_controller() ->
     [{_,D}] = ets:lookup(variables, "Angle_Coef_D"),
     AngleRateError = (Angle + Offset) * P + (AngleInt) * I + (Angle_Rate) * D,
 
+    io:format("~p, ~p~n",[Angle, Offset]),
+
     Acc_comm = ( AngleRateError
                          + ?Dist_Coef * Distance_saturated
                          + ?Speed_Coef * SpeedCommand),
@@ -120,7 +122,7 @@ compute_angle({Ax,Az,Gy,Dt}) ->
     [{_,AngleInt}] = ets:lookup(variables, "AngleInt"),
 
     %low pass filter on derivative
-    AR = (Gy - DC_Bias) * ?Coef_Filter + Angle_Rate * (1 - ?Coef_Filter),
+    AR = (Gy - DC_Bias) * ?Coef_Filter + Angle_Rate * (1 - ?Coef_Filter), %D
     ets:insert(variables, {"Angle_Rate", AR}),
 
     %complementary filter
