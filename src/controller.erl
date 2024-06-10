@@ -35,6 +35,7 @@ init({Cal}) ->
     ets:insert(variables, {"Angle_Coef_P", 0}),
     ets:insert(variables, {"Angle_Coef_I", 0}),
     ets:insert(variables, {"Angle_Coef_D", 0}),
+    ets:insert(variables, {"Offset_Coef", 0.9}),
     ets:insert(variables, {"Reset", 1.0}),
     ok.
 
@@ -61,10 +62,11 @@ pause_ctrl(R) ->
     ok.
 
 
-modif_coef({P,I,D}) ->
+modif_coef({P,I,D,F}) ->
     ets:insert(variables, {"Angle_Coef_P", P}),
     ets:insert(variables, {"Angle_Coef_I", I}),
     ets:insert(variables, {"Angle_Coef_D", D}),
+    ets:insert(variables, {"Offset_Coef", F}),
     ok.
 
 print_coef() ->
@@ -122,11 +124,11 @@ compute_angle({Ax,Az,Gy,Dt}) ->
     [{_,AngleInt}] = ets:lookup(variables, "AngleInt"),
 
     %low pass filter on derivative
-    AR = (Gy - DC_Bias) * ?Coef_Filter + Angle_Rate * (1 - ?Coef_Filter), %D
-    ets:insert(variables, {"Angle_Rate", AR}),
+    New_Angle_Rate = (Gy - DC_Bias) * ?Coef_Filter + Angle_Rate * (1 - ?Coef_Filter), %D
+    ets:insert(variables, {"Angle_Rate", New_Angle_Rate}),
 
     %complementary filter
-    Delta_Gyr = AR * Dt,
+    Delta_Gyr = New_Angle_Rate * Dt,
     Angle_Acc = math:atan(Ax / Az) * 180 / math:pi(),
     New_Angle = (Angle + Delta_Gyr) * ?K + (1 - ?K) * Angle_Acc, %P
     ets:insert(variables, {"Angle", New_Angle}),
@@ -143,9 +145,10 @@ compute_angle_offset() ->
     %Retreive values from table
     [{_,Angle}] = ets:lookup(variables, "Angle"),
     [{_,Offset}] = ets:lookup(variables, "Offset"),
+    [{_,Offset_Coef}] = ets:lookup(variables, "Offset_Coef"),
 
-    OS = (( Angle + Offset) * 999.9 / 1000) - Angle,
-    ets:insert(variables, {"Offset", OS}),
+    New_Offset = (( Angle + Offset) * Offset_Coef) - Angle,
+    ets:insert(variables, {"Offset", New_Offset}),
     ok.
 
 
