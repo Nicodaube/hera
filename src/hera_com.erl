@@ -40,7 +40,7 @@ encode_half_float(Values) ->
 %
 %Decodes a list of values from half-float (2 bytes) to double (8 bytes)
 %Values = <<Hf1A,Hf1B,Hf2A,Hf2B,...>>
-%e.g. <<43,0A,4B,0C>> gives [3.2,14.1]
+%e.g. <<43,0A,4B,0C>> gives [3.52,14.1]
 %
 decode_half_float(Values) when is_binary(Values) -> decode_half_float(Values, []). 
 decode_half_float(<<A:8, B:8, Rest/binary>>, Acc) -> decode_half_float(Rest, Acc ++ [dec_hf(<<A, B>>)]); 
@@ -111,7 +111,8 @@ enc_hf(Double) ->
 	B2 = ((B bsl 6) band 192) bor ((C bsr 2) band 63),
 	<<A2,B2>>.
 
-%Decodes one value from a double to a half-float
+%Decodes one value from a half-float to a double
+dec_hf(<<0,0>>) -> 0.0;
 dec_hf(Half_Float) ->
 	<<X,Y>> = Half_Float,	
 	if
