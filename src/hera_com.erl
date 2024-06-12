@@ -39,10 +39,13 @@ encode_half_float(Values) ->
 
 %
 %Decodes a list of values from half-float (2 bytes) to double (8 bytes)
-%Values = [Half_float1,Half_float2,...]
+%Values = <<Hf1A,Hf1B,Hf2A,Hf2B,...>>
+%e.g. <<43,0A,4B,0C>> gives [3.2,14.1]
 %
-decode_half_float(Values) -> 
-	lists:map(fun(X) -> dec_hf(X) end, Values).
+decode_half_float(Values) when is_binary(Values) -> byte_stream_to_pairs(Values, []). 
+decode_half_float(<<A:8, B:8, Rest/binary>>, Acc) -> byte_stream_to_pairs(Rest, Acc ++ [dec_hf(<<A, B>>)]); 
+decode_half_float(<<>>, Acc) -> Acc.
+	% lists:map(fun(X) -> dec_hf(X) end, Values).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Internal functions
@@ -121,9 +124,11 @@ dec_hf(Half_Float) ->
 	C = ((Y bsl 2) band 252),
 	binary_to_term(<<131,70,A,B,C,0,0,0,0,0>>).
 
+help_decode(List,)
 
-
-
+byte_stream_to_pairs(ByteStream) when is_binary(ByteStream) -> byte_stream_to_pairs(ByteStream, []). 
+byte_stream_to_pairs(<<A:8, B:8, Rest/binary>>, Acc) -> byte_stream_to_pairs(Rest, Acc ++ [<<A, B>>]); 
+byte_stream_to_pairs(<<>>, Acc) -> Acc.
 
 
 
