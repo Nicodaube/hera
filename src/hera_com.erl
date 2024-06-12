@@ -42,8 +42,8 @@ encode_half_float(Values) ->
 %Values = <<Hf1A,Hf1B,Hf2A,Hf2B,...>>
 %e.g. <<43,0A,4B,0C>> gives [3.2,14.1]
 %
-decode_half_float(Values) when is_binary(Values) -> byte_stream_to_pairs(Values, []). 
-decode_half_float(<<A:8, B:8, Rest/binary>>, Acc) -> byte_stream_to_pairs(Rest, Acc ++ [dec_hf(<<A, B>>)]); 
+decode_half_float(Values) when is_binary(Values) -> decode_half_float(Values, []). 
+decode_half_float(<<A:8, B:8, Rest/binary>>, Acc) -> decode_half_float(Rest, Acc ++ [dec_hf(<<A, B>>)]); 
 decode_half_float(<<>>, Acc) -> Acc.
 	% lists:map(fun(X) -> dec_hf(X) end, Values).
 
