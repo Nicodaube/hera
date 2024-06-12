@@ -124,13 +124,6 @@ dec_hf(Half_Float) ->
 	C = ((Y bsl 2) band 252),
 	binary_to_term(<<131,70,A,B,C,0,0,0,0,0>>).
 
-help_decode(List,)
-
-byte_stream_to_pairs(ByteStream) when is_binary(ByteStream) -> byte_stream_to_pairs(ByteStream, []). 
-byte_stream_to_pairs(<<A:8, B:8, Rest/binary>>, Acc) -> byte_stream_to_pairs(Rest, Acc ++ [<<A, B>>]); 
-byte_stream_to_pairs(<<>>, Acc) -> Acc.
-
-
 
 
 
