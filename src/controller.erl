@@ -74,7 +74,7 @@ print_coef() ->
     [{_,I}] = ets:lookup(variables, "Angle_Coef_I"),
     [{_,D}] = ets:lookup(variables, "Angle_Coef_D"),
     [{_,F}] = ets:lookup(variables, "Offset_Coef"),
-    io:format("Coefs: ~p, ~p, ~p~n",[P,I,D,F]),
+    io:format("Coefs: ~p, ~p, ~p, ~p~n",[P,I,D,F]),
     ok.
 
 
@@ -128,7 +128,7 @@ compute_angle({Ax,Az,Gy,Dt}) ->
     [{_,DC_Bias}] = ets:lookup(variables, "DC_Bias"),
     [{_,Angle_Rate}] = ets:lookup(variables, "Angle_Rate"),
     [{_,Angle}] = ets:lookup(variables, "Angle"),
-    [{_,AngleInt}] = ets:lookup(variables, "AngleInt"),
+
 
     %low pass filter on derivative
     New_Angle_Rate = (Gy - DC_Bias) * ?Coef_Filter + Angle_Rate * (1 - ?Coef_Filter), %D
