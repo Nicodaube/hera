@@ -9,7 +9,7 @@
 
 -define(Speed_Limit, 50.0).
 -define(Dist_Coef, 0.0).
--define(Speed_Coef, 2.0).
+% -define(Speed_Coef, 2.0).
 % -define(Angle_Coef_P, 0.7).
 % -define(Angle_Coef_I, 0.7).
 % -define(Angle_Coef_D, 4.9).
@@ -25,31 +25,36 @@ init({Cal}) ->
     I2Cbus = grisp_i2c:open(i2c1),
 
     ets:new(variables, [set, public, named_table]),
-    ets:insert(variables, {"SpeedCommand", 0}),
+    ets:insert(variables, {"Bus", I2Cbus}),
+
+    ets:insert(variables, {"SpeedMes", 0}),
     ets:insert(variables, {"Angle_Rate", 0}),
     ets:insert(variables, {"Angle", 0}),
     ets:insert(variables, {"DC_Bias", Cal}),
     ets:insert(variables, {"Offset", 0}),
-    ets:insert(variables, {"Bus", I2Cbus}),
     ets:insert(variables, {"AngleInt", 0}),
+
     ets:insert(variables, {"Angle_Coef_P", 0}),
     ets:insert(variables, {"Angle_Coef_I", 0}),
     ets:insert(variables, {"Angle_Coef_D", 0}),
     ets:insert(variables, {"Offset_Coef", 0.9}),
+    ets:insert(variables, {"Speed_Coef", 0}),
+    
+
     ets:insert(variables, {"Reset", 1.0}),
     ok.
 
 
 controller(Measures) ->
 
-    {Ax,Az,Gy,Dt} = Measures, %Pas vraiment utile sauf pour print
+    {Ax,Az,Gy,Speed,Dt} = Measures, %Pas vraiment utile sauf pour print
     Balance_enable = true,
-
+    ets:insert(variables, {"SpeedMes", Speed}),
     compute_angle(Measures),
     compute_angle_offset(),
 
     [{_,Reset}] = ets:lookup(variables, "Reset"),
-
+    
     Acc = balance_controller(Dt),
     % io:format("Acc command: ~p~n",[Acc]),
     {Acc, Reset}.
@@ -62,11 +67,12 @@ pause_ctrl(R) ->
     ok.
 
 
-modif_coef({P,I,D,F}) ->
+modif_coef({P,I,D,F,S}) ->
     ets:insert(variables, {"Angle_Coef_P", P}),
     ets:insert(variables, {"Angle_Coef_I", I}),
     ets:insert(variables, {"Angle_Coef_D", D}),
     ets:insert(variables, {"Offset_Coef", F}),
+    ets:insert(variables, {"Speed_Coef", S}),
     ok.
 
 print_coef() ->
@@ -74,7 +80,8 @@ print_coef() ->
     [{_,I}] = ets:lookup(variables, "Angle_Coef_I"),
     [{_,D}] = ets:lookup(variables, "Angle_Coef_D"),
     [{_,F}] = ets:lookup(variables, "Offset_Coef"),
-    io:format("Coefs: ~p, ~p, ~p, ~p~n",[P,I,D,F]),
+    [{_,S}] = ets:lookup(variables, "Speed_Coef"),
+    io:format("Coefs: ~p, ~p, ~p, ~p, ~p~n",[P,I,D,F,S]),
     ok.
 
 
@@ -83,7 +90,8 @@ balance_controller(Dt) ->
     [{_,Offset}] = ets:lookup(variables, "Offset"),
     [{_,Angle_Rate}] = ets:lookup(variables, "Angle_Rate"),
     [{_,Angle}] = ets:lookup(variables, "Angle"),
-    [{_,SpeedCommand}] = ets:lookup(variables, "SpeedCommand"),
+    [{_,Speed_mes}] = ets:lookup(variables, "SpeedMes"),
+    [{_,Speed_Coef}] = ets:lookup(variables, "Speed_Coef"),
     [{_,AngleInt}] = ets:lookup(variables, "AngleInt"),
 
     Distance_saturated = 0.0, %saturation((distances[0] + distances[2]) / 2, 20),
@@ -104,7 +112,7 @@ balance_controller(Dt) ->
 
     Acc_comm = ( PID_output
                          + ?Dist_Coef * Distance_saturated
-                         + ?Speed_Coef * SpeedCommand),
+                         + Speed_Coef * Speed_mes),
     Acc_comm.
 
 

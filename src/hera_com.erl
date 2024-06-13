@@ -40,12 +40,11 @@ encode_half_float(Values) ->
 %
 %Decodes a list of values from half-float (2 bytes) to double (8 bytes)
 %Values = <<Hf1A,Hf1B,Hf2A,Hf2B,...>>
-%e.g. <<43,0A,4B,0C>> gives [3.52,14.1]
+%e.g. <<16#43,16#0A,16#4B,16#0C>> gives [3.52,14.1]
 %
 decode_half_float(Values) when is_binary(Values) -> decode_half_float(Values, []). 
 decode_half_float(<<A:8, B:8, Rest/binary>>, Acc) -> decode_half_float(Rest, Acc ++ [dec_hf(<<A, B>>)]); 
 decode_half_float(<<>>, Acc) -> Acc.
-	% lists:map(fun(X) -> dec_hf(X) end, Values).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Internal functions
