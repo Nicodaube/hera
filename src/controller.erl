@@ -127,7 +127,7 @@ saturation(Input, Bound) ->
     end.
 
 
-compute_angle({Ax,Az,Gy,Dt}) ->
+compute_angle({Ax,Az,Gy,Speed,Dt}) ->
 
     % io:format("~p, ~p~n",[ets:lookup(variables, "DC_Bias"),ets:lookup(variables, "Angle_Rate")]),
     % io:format("~p~n",[Gy - ets:lookup(variables, "DC_Bias")]),
