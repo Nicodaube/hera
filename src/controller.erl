@@ -15,30 +15,37 @@
 % -define(Angle_Coef_D, 4.9).
 -define(Coef_Filter, 0.667).
 -define(K, 0.97).
--define(Angle_Int_Coef, 1.0).
 
 
 %Une fois qu'on a de bons coeffs on peut tous les def avec un "-define()" pour plus d'efficacité
 
 
 init({Cal}) ->
-    I2Cbus = grisp_i2c:open(i2c1),
+    % I2Cbus = grisp_i2c:open(i2c1),
 
     ets:new(variables, [set, public, named_table]),
-    ets:insert(variables, {"Bus", I2Cbus}),
+    % ets:insert(variables, {"Bus", I2Cbus}),
 
-    ets:insert(variables, {"SpeedMes", 0}),
-    ets:insert(variables, {"Angle_Rate", 0}),
-    ets:insert(variables, {"Angle", 0}),
+    % ets:insert(variables, {"SpeedMes", 0.0}),
+    ets:insert(variables, {"Angle_Rate", 0.0}),
+    ets:insert(variables, {"Angle", 0.0}),
     ets:insert(variables, {"DC_Bias", Cal}),
-    ets:insert(variables, {"Offset", 0}),
-    ets:insert(variables, {"AngleInt", 0}),
+    ets:insert(variables, {"Offset", 0.0}),
+    ets:insert(variables, {"AngleInt", 0.0}),
 
-    ets:insert(variables, {"Angle_Coef_P", 0}),
-    ets:insert(variables, {"Angle_Coef_I", 0}),
-    ets:insert(variables, {"Angle_Coef_D", 0}),
+    ets:insert(variables, {"Angle_Coef_P", 0.0}),
+    ets:insert(variables, {"Angle_Coef_I", 0.0}),
+    ets:insert(variables, {"Angle_Coef_D", 0.0}),
     ets:insert(variables, {"Offset_Coef", 0.9}),
-    ets:insert(variables, {"Speed_Coef", 0}),
+    ets:insert(variables, {"Speed_Coef", 0.0}),
+    
+
+    ets:insert(variables, {"Kp1", 0.0}),
+    ets:insert(variables, {"Ki1", 0.0}),
+    ets:insert(variables, {"Kp2", 0.0}),
+    ets:insert(variables, {"Ki2", 0.0}),
+    
+    ets:insert(variables, {"PID_error_sum", 0.0}),
     
 
     ets:insert(variables, {"Reset", 1.0}),
@@ -49,13 +56,13 @@ controller(Measures) ->
 
     {Ax,Az,Gy,Speed,Dt} = Measures, %Pas vraiment utile sauf pour print
     Balance_enable = true,
-    ets:insert(variables, {"SpeedMes", Speed}),
+    % ets:insert(variables, {"SpeedMes", Speed}),
     compute_angle(Measures),
     compute_angle_offset(),
 
     [{_,Reset}] = ets:lookup(variables, "Reset"),
     
-    Acc = balance_controller(Dt),
+    Acc = balance_controller2(Dt,Speed),
     % io:format("Acc command: ~p~n",[Acc]),
     {Acc, Reset}.
 
@@ -85,12 +92,12 @@ print_coef() ->
     ok.
 
 
-balance_controller(Dt) ->
+balance_controller(Dt,Speed) ->
 
     [{_,Offset}] = ets:lookup(variables, "Offset"),
     [{_,Angle_Rate}] = ets:lookup(variables, "Angle_Rate"),
     [{_,Angle}] = ets:lookup(variables, "Angle"),
-    [{_,Speed_mes}] = ets:lookup(variables, "SpeedMes"),
+    % [{_,Speed_mes}] = ets:lookup(variables, "SpeedMes"),
     [{_,Speed_Coef}] = ets:lookup(variables, "Speed_Coef"),
     [{_,AngleInt}] = ets:lookup(variables, "AngleInt"),
 
@@ -112,9 +119,39 @@ balance_controller(Dt) ->
 
     Acc_comm = ( PID_output
                          + ?Dist_Coef * Distance_saturated
-                         + Speed_Coef * Speed_mes),
+                         + Speed_Coef * Speed),
     Acc_comm.
 
+balance_controller2(Dt,Speed) ->
+
+    [{_,Angle}] = ets:lookup(variables, "Angle"),
+    [{_,Kp1}] = ets:lookup(variables, "Kp1"),
+    [{_,Ki1}] = ets:lookup(variables, "Ki1"),
+    [{_,Kp2}] = ets:lookup(variables, "Kp2"),
+    [{_,Ki2}] = ets:lookup(variables, "Ki2"),
+
+    Target_angle = speed_PI(Dt,Speed,0,Kp1,Ki1),
+    Target_angle_sat = saturation(Target_angle,30),
+    Acc = stability_PD(Dt,Angle,Target_angle_sat,Kp2,Ki2),
+    % Acc_sat = saturation(Acc,15),
+    Acc.
+
+speed_PI(Dt,Speed,SetPoint,Kp,Ki) ->
+
+    [{_,PID_error_int}] = ets:lookup(variables, "PID_error_int"),
+
+    Error = SetPoint - Speed,
+    PID_error_int_new = PID_error_int + Error * Dt,
+    ets:insert(variables, {"PID_error_sum", PID_error_int_new}),
+    Kp * Error + Ki * PID_error_int_new.
+
+stability_PD(Dt,Angle,Setpoint,Kp,Kd) ->
+    [{_,Angle_Rate}] = ets:lookup(variables, "Angle_Rate"),
+
+    ErrorP = Setpoint - Angle,
+    ErrorD = -Angle_Rate,
+    PID_output = Kp*ErrorP + Kd*ErrorD,
+    PID_output.
 
 saturation(Input, Bound) ->
   if   
