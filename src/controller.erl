@@ -45,7 +45,7 @@ init({Cal}) ->
     ets:insert(variables, {"Kp2", 0.0}),
     ets:insert(variables, {"Kd2", 0.0}),
     
-    ets:insert(variables, {"PID_error_sum", 0.0}),
+    ets:insert(variables, {"PID_error_int", 0.0}),
     
 
     ets:insert(variables, {"Reset", 1.0}),
