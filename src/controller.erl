@@ -4,8 +4,8 @@
 -export([init/1]).
 -export([controller/1]).
 
--export([modif_coef/1]).
--export([print_coef/0, pause_ctrl/1]).
+-export([modif_coef/1,modif_coef2/1]).
+-export([print_coef/0, print_coef2/0, pause_ctrl/1]).
 
 -define(Speed_Limit, 50.0).
 -define(Dist_Coef, 0.0).
@@ -43,7 +43,7 @@ init({Cal}) ->
     ets:insert(variables, {"Kp1", 0.0}),
     ets:insert(variables, {"Ki1", 0.0}),
     ets:insert(variables, {"Kp2", 0.0}),
-    ets:insert(variables, {"Ki2", 0.0}),
+    ets:insert(variables, {"Kd2", 0.0}),
     
     ets:insert(variables, {"PID_error_sum", 0.0}),
     
@@ -91,6 +91,21 @@ print_coef() ->
     io:format("Coefs: ~p, ~p, ~p, ~p, ~p~n",[P,I,D,F,S]),
     ok.
 
+modif_coef2({Kp1,Ki1,Kp2,Kd2}) ->
+    ets:insert(variables, {"Kp1", Kp1}),
+    ets:insert(variables, {"Ki1", Ki1}),
+    ets:insert(variables, {"Kp2", Kp2}),
+    ets:insert(variables, {"Kd2", Kd2}),
+    ok.
+
+print_coef2() ->
+    [{_,Kp1}] = ets:lookup(variables, "Kp1"),
+    [{_,Ki1}] = ets:lookup(variables, "Ki1"),
+    [{_,Kp2}] = ets:lookup(variables, "Kp2"),
+    [{_,Kd2}] = ets:lookup(variables, "Kd2"),
+    io:format("Coefs: ~p, ~p, ~p, ~p~n",[Kp1,Ki1,Kp2,Kd2]),
+    ok.
+
 
 balance_controller(Dt,Speed) ->
 
@@ -128,11 +143,11 @@ balance_controller2(Dt,Speed) ->
     [{_,Kp1}] = ets:lookup(variables, "Kp1"),
     [{_,Ki1}] = ets:lookup(variables, "Ki1"),
     [{_,Kp2}] = ets:lookup(variables, "Kp2"),
-    [{_,Ki2}] = ets:lookup(variables, "Ki2"),
+    [{_,Kd2}] = ets:lookup(variables, "Kd2"),
 
     Target_angle = speed_PI(Dt,Speed,0,Kp1,Ki1),
     Target_angle_sat = saturation(Target_angle,30),
-    Acc = stability_PD(Dt,Angle,Target_angle_sat,Kp2,Ki2),
+    Acc = stability_PD(Dt,Angle,Target_angle_sat,Kp2,Kd2),
     % Acc_sat = saturation(Acc,15),
     Acc.
 
