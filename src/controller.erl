@@ -36,7 +36,7 @@ init({Cal}) ->
     ets:insert(variables, {"Angle_Coef_P", 0.0}),
     ets:insert(variables, {"Angle_Coef_I", 0.0}),
     ets:insert(variables, {"Angle_Coef_D", 0.0}),
-    ets:insert(variables, {"Offset_Coef", 0.9}),
+    ets:insert(variables, {"Offset_Coef", 0.99}),
     ets:insert(variables, {"Speed_Coef", 0.0}),
     
 
@@ -62,7 +62,7 @@ controller(Measures) ->
 
     [{_,Reset}] = ets:lookup(variables, "Reset"),
     
-    Acc = balance_controller2(Dt,Speed),
+    Acc = balance_controller(Dt,Speed),
     % io:format("Acc command: ~p~n",[Acc]),
     {Acc, Reset}.
 
@@ -127,9 +127,16 @@ balance_controller(Dt,Speed) ->
     ErrorI = AngleInt + ErrorP * Dt,
     ErrorD = -Angle_Rate,
 
-    %io:format("~.3f, ~.3f~n",[Angle, Offset]),
+    io:format("~.3f~n",[Speed]),
 
-    PID_output = P*ErrorP + I*ErrorI + D*ErrorD,
+    if   
+    abs(Angle) > 15 ->
+        PID_output = 2*P*ErrorP + I*ErrorI + D*ErrorD;
+    true ->
+        PID_output = P*ErrorP + I*ErrorI + D*ErrorD
+    end,
+
+    % PID_output = P*ErrorP + I*ErrorI + D*ErrorD,
     ets:insert(variables, {"AngleInt", ErrorI}),
 
     Acc_comm = ( PID_output
@@ -146,9 +153,11 @@ balance_controller2(Dt,Speed) ->
     [{_,Kd2}] = ets:lookup(variables, "Kd2"),
 
     Target_angle = speed_PI(Dt,Speed,0,Kp1,Ki1),
+    
     Target_angle_sat = saturation(Target_angle,30),
     Acc = stability_PD(Dt,Angle,Target_angle_sat,Kp2,Kd2),
     % Acc_sat = saturation(Acc,15),
+    % io:format(~p)
     Acc.
 
 speed_PI(Dt,Speed,SetPoint,Kp,Ki) ->
@@ -158,15 +167,16 @@ speed_PI(Dt,Speed,SetPoint,Kp,Ki) ->
     Error = SetPoint - Speed,
     PID_error_int_new = PID_error_int + Error * Dt,
     ets:insert(variables, {"PID_error_sum", PID_error_int_new}),
-    Kp * Error + Ki * PID_error_int_new.
+    PI_output = Kp * Error + Ki * PID_error_int_new,
+    PI_output.
 
 stability_PD(Dt,Angle,Setpoint,Kp,Kd) ->
     [{_,Angle_Rate}] = ets:lookup(variables, "Angle_Rate"),
 
     ErrorP = Setpoint - Angle,
     ErrorD = -Angle_Rate,
-    PID_output = Kp*ErrorP + Kd*ErrorD,
-    PID_output.
+    PD_output = Kp*ErrorP + Kd*ErrorD,
+    PD_output.
 
 saturation(Input, Bound) ->
   if   
