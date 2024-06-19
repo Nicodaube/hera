@@ -117,8 +117,6 @@ print_coef2() ->
     io:format("Coefs: ~p, ~p, ~p, ~p, ~p~n",[Kp1,Ki1,Kp2,Kd2,Angle_Offset]),
     ok.
 
-calc_mean()
-
 set_offset(Measures) ->
     [{_,Angle}] = ets:lookup(variables, "Angle"),
     ets:insert(variables, {"Angle_Offset", Angle+1.0}).
