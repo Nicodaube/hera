@@ -117,6 +117,8 @@ print_coef2() ->
     io:format("Coefs: ~p, ~p, ~p, ~p, ~p~n",[Kp1,Ki1,Kp2,Kd2,Angle_Offset]),
     ok.
 
+calc_mean()
+
 set_offset(Measures) ->
     [{_,Angle}] = ets:lookup(variables, "Angle"),
     ets:insert(variables, {"Angle_Offset", Angle+1.0}).
@@ -170,7 +172,7 @@ balance_controller2(Dt,Speed) ->
     Target_angle = speed_PI(Dt,Speed,0,Kp1,Ki1),
     io:format("~.3f, ~.3f, ~.3f, ~.3f~n",[Speed,Target_angle,Angle,Angle_Offset]),
     Target_angle_sat = saturation(Angle_Offset,30),
-    Acc = stability_PD(Dt,Angle,Target_angle_sat,Kp2,Kd2),
+    Acc = stability_PD(Dt,Angle,Target_angle,Kp2,Kd2),
     % Acc_sat = saturation(Acc,15),
     % io:format(~p)
     Acc.
