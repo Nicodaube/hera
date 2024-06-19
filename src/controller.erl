@@ -46,6 +46,7 @@ init({Cal}) ->
     ets:insert(variables, {"Kd2", 0.0}),
     
     ets:insert(variables, {"PID_error_int", 0.0}),
+    ets:insert(variables, {"Angle_Offset", 2.7}),
     
 
     ets:insert(variables, {"Reset", 1.0}),
@@ -62,6 +63,13 @@ controller(Measures) ->
 
     [{_,Reset}] = ets:lookup(variables, "Reset"),
     
+    if   
+    Reset == 0 ->
+        set_offset(Measures);
+    true ->
+        ok
+    end,
+
     Acc = balance_controller2(Dt,Speed),
     % io:format("Acc command: ~p~n",[Acc]),
     {Acc, Reset}.
@@ -92,11 +100,12 @@ print_coef() ->
     io:format("Coefs: ~p, ~p, ~p, ~p, ~p~n",[P,I,D,F,S]),
     ok.
 
-modif_coef2({Kp1,Ki1,Kp2,Kd2}) ->
+modif_coef2({Kp1,Ki1,Kp2,Kd2,Offset}) ->
     ets:insert(variables, {"Kp1", Kp1}),
     ets:insert(variables, {"Ki1", Ki1}),
     ets:insert(variables, {"Kp2", Kp2}),
     ets:insert(variables, {"Kd2", Kd2}),
+    ets:insert(variables, {"Angle_Offset", Offset}),
     ok.
 
 print_coef2() ->
@@ -104,9 +113,13 @@ print_coef2() ->
     [{_,Ki1}] = ets:lookup(variables, "Ki1"),
     [{_,Kp2}] = ets:lookup(variables, "Kp2"),
     [{_,Kd2}] = ets:lookup(variables, "Kd2"),
-    io:format("Coefs: ~p, ~p, ~p, ~p~n",[Kp1,Ki1,Kp2,Kd2]),
+    [{_,Angle_Offset}] = ets:lookup(variables, "Angle_Offset"),
+    io:format("Coefs: ~p, ~p, ~p, ~p, ~p~n",[Kp1,Ki1,Kp2,Kd2,Angle_Offset]),
     ok.
 
+set_offset(Measures) ->
+    [{_,Angle}] = ets:lookup(variables, "Angle"),
+    ets:insert(variables, {"Angle_Offset", Angle+1.0}).
 
 balance_controller(Dt,Speed) ->
 
@@ -148,14 +161,15 @@ balance_controller(Dt,Speed) ->
 balance_controller2(Dt,Speed) ->
 
     [{_,Angle}] = ets:lookup(variables, "Angle"),
+    [{_,Angle_Offset}] = ets:lookup(variables, "Angle_Offset"),
     [{_,Kp1}] = ets:lookup(variables, "Kp1"),
     [{_,Ki1}] = ets:lookup(variables, "Ki1"),
     [{_,Kp2}] = ets:lookup(variables, "Kp2"),
     [{_,Kd2}] = ets:lookup(variables, "Kd2"),
 
     Target_angle = speed_PI(Dt,Speed,0,Kp1,Ki1),
-    io:format("~.3f, ~.3f, ~.3f~n",[Speed,Target_angle,Angle]),
-    Target_angle_sat = saturation(Target_angle,30),
+    io:format("~.3f, ~.3f, ~.3f, ~.3f~n",[Speed,Target_angle,Angle,Angle_Offset]),
+    Target_angle_sat = saturation(Angle_Offset,30),
     Acc = stability_PD(Dt,Angle,Target_angle_sat,Kp2,Kd2),
     % Acc_sat = saturation(Acc,15),
     % io:format(~p)
