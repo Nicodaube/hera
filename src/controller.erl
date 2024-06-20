@@ -56,10 +56,11 @@ init({Cal}) ->
 
 controller(Measures) ->
 
-    {Ax,Az,Gy,Speed,Dt} = Measures, %Pas vraiment utile sauf pour print
+    {Ax,Az,Gy,Speed,Dt,Th} = Measures, %Pas vraiment utile sauf pour print
     Balance_enable = true,
     % ets:insert(variables, {"SpeedMes", Speed}),
-    compute_angle(Measures),
+    ets:insert(variables, {"Angle", Th}),
+    % compute_angle(Measures),
     compute_angle_offset(),
 
     [{_,Reset}] = ets:lookup(variables, "Reset"),
@@ -144,15 +145,10 @@ balance_controller(Dt,Speed) ->
     ErrorI = AngleInt + ErrorP * Dt,
     ErrorD = -Angle_Rate,
 
-    io:format("~.3f~n",[Speed]),
 
-    if   
-    abs(Angle) > 15 ->
-        PID_output = 2*P*ErrorP + I*ErrorI + D*ErrorD;
-    true ->
-        PID_output = P*ErrorP + I*ErrorI + D*ErrorD
-    end,
+    PID_output = P*ErrorP + I*ErrorI + D*ErrorD
 
+    io:format("~.3f, ~.3f, ~.3f, ~.3f~n",[Speed,Target_angle,Angle,Angle_Offset,Angle]),
     % PID_output = P*ErrorP + I*ErrorI + D*ErrorD,
     ets:insert(variables, {"AngleInt", ErrorI}),
 
