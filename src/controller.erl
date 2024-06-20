@@ -181,7 +181,7 @@ speed_PI(Dt,Speed,SetPoint,Kp,Ki) ->
 
     Error = SetPoint - Speed,
     PID_error_int_new = PID_error_int + Error * Dt,
-    ets:insert(variables, {"PID_error_sum", PID_error_int_new}),
+    ets:insert(variables, {"PID_error_int", PID_error_int_new}),
     PI_output = Kp * Error + Ki * PID_error_int_new,
     PI_output.
 
