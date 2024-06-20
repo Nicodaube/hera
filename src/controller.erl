@@ -148,7 +148,7 @@ balance_controller(Dt,Speed) ->
 
     PID_output = P*ErrorP + I*ErrorI + D*ErrorD,
 
-    io:format("~.3f, ~.3f, ~.3f, ~.3f~n",[Speed,Angle]),
+    io:format("~.3f, ~.3f~n",[Speed,Angle]),
     % PID_output = P*ErrorP + I*ErrorI + D*ErrorD,
     ets:insert(variables, {"AngleInt", ErrorI}),
 
