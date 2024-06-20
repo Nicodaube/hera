@@ -72,7 +72,7 @@ controller(Measures) ->
         ok
     end,
 
-    Acc = balance_controller2(Dt,Speed),
+    Acc = balance_controller(Dt,Speed),
     % io:format("Acc command: ~p~n",[Acc]),
     {Acc, Reset}.
 
@@ -146,9 +146,9 @@ balance_controller(Dt,Speed) ->
     ErrorD = -Angle_Rate,
 
 
-    PID_output = P*ErrorP + I*ErrorI + D*ErrorD
+    PID_output = P*ErrorP + I*ErrorI + D*ErrorD,
 
-    io:format("~.3f, ~.3f, ~.3f, ~.3f~n",[Speed,Target_angle,Angle,Angle_Offset,Angle]),
+    io:format("~.3f, ~.3f, ~.3f, ~.3f~n",[Speed,Angle]),
     % PID_output = P*ErrorP + I*ErrorI + D*ErrorD,
     ets:insert(variables, {"AngleInt", ErrorI}),
 
