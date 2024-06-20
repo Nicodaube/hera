@@ -14,7 +14,7 @@
 % -define(Angle_Coef_I, 0.7).
 % -define(Angle_Coef_D, 4.9).
 -define(Coef_Filter, 0.667).
--define(K, 0.97).
+% -define(K, 0.97).
 
 
 %Une fois qu'on a de bons coeffs on peut tous les def avec un "-define()" pour plus d'efficacité
@@ -44,6 +44,7 @@ init({Cal}) ->
     ets:insert(variables, {"Ki1", 0.0}),
     ets:insert(variables, {"Kp2", 0.0}),
     ets:insert(variables, {"Kd2", 0.0}),
+    ets:insert(variables, {"K", 0.97}),
     
     ets:insert(variables, {"PID_error_int", 0.0}),
     ets:insert(variables, {"Angle_Offset", 2.7}),
@@ -79,7 +80,7 @@ pause_ctrl(R) ->
     [{_,Angle}] = ets:lookup(variables, "Angle"),
     ets:insert(variables, {"Reset", R}),
     ets:insert(variables, {"Offset", Angle}),
-    ets:insert(variables, {"PID_error_int", 0}),
+    ets:insert(variables, {"PID_error_int", 0.0}),
     ok.
 
 
@@ -100,12 +101,13 @@ print_coef() ->
     io:format("Coefs: ~p, ~p, ~p, ~p, ~p~n",[P,I,D,F,S]),
     ok.
 
-modif_coef2({Kp1,Ki1,Kp2,Kd2,Offset}) ->
+modif_coef2({Kp1,Ki1,Kp2,Kd2,Offset,K}) ->
     ets:insert(variables, {"Kp1", Kp1}),
     ets:insert(variables, {"Ki1", Ki1}),
     ets:insert(variables, {"Kp2", Kp2}),
     ets:insert(variables, {"Kd2", Kd2}),
     ets:insert(variables, {"Angle_Offset", Offset}),
+    ets:insert(variables, {"K", K}),
     ok.
 
 print_coef2() ->
@@ -114,7 +116,8 @@ print_coef2() ->
     [{_,Kp2}] = ets:lookup(variables, "Kp2"),
     [{_,Kd2}] = ets:lookup(variables, "Kd2"),
     [{_,Angle_Offset}] = ets:lookup(variables, "Angle_Offset"),
-    io:format("Coefs: ~p, ~p, ~p, ~p, ~p~n",[Kp1,Ki1,Kp2,Kd2,Angle_Offset]),
+    [{_,K}] = ets:lookup(variables, "K"),
+    io:format("Coefs: ~p, ~p, ~p, ~p, ~p, ~p~n",[Kp1,Ki1,Kp2,Kd2,Angle_Offset,K]),
     ok.
 
 set_offset(Measures) ->
@@ -169,7 +172,7 @@ balance_controller2(Dt,Speed) ->
 
     Target_angle = speed_PI(Dt,Speed,0,Kp1,Ki1),
     io:format("~.3f, ~.3f, ~.3f, ~.3f~n",[Speed,Target_angle,Angle,Angle_Offset]),
-    Target_angle_sat = saturation(Angle_Offset,30),
+    % Target_angle_sat = saturation(Angle_Offset,30),
     Acc = stability_PD(Dt,Angle,Target_angle,Kp2,Kd2),
     % Acc_sat = saturation(Acc,15),
     % io:format(~p)
@@ -213,6 +216,7 @@ compute_angle({Ax,Az,Gy,Speed,Dt}) ->
     [{_,DC_Bias}] = ets:lookup(variables, "DC_Bias"),
     [{_,Angle_Rate}] = ets:lookup(variables, "Angle_Rate"),
     [{_,Angle}] = ets:lookup(variables, "Angle"),
+    [{_,K}] = ets:lookup(variables, "K"),
 
 
     %low pass filter on derivative
@@ -225,7 +229,7 @@ compute_angle({Ax,Az,Gy,Speed,Dt}) ->
     Angle_Acc = math:atan(Ax / Az) * 180 / math:pi(),
 
     %complementary filter
-    New_Angle = (Angle + Delta_Gyr) * ?K + (1 - ?K) * Angle_Acc, 
+    New_Angle = (Angle + Delta_Gyr) * K + (1 - K) * Angle_Acc, 
     ets:insert(variables, {"Angle", New_Angle}),
 
     %New_Angle_Int = AngleInt + New_Angle*Dt, %I
