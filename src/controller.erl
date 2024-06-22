@@ -163,14 +163,14 @@ balance_controller(Dt,Speed) ->
 balance_controller2(Dt,Speed) ->
 
     [{_,Angle_kalman}] = ets:lookup(variables, "Angle_kalman"),
-    [{_,Angle_Offset}] = ets:lookup(variables, "Angle_Offset"),
+    % [{_,Angle_Offset}] = ets:lookup(variables, "Angle_Offset"),
     [{_,Kp1}] = ets:lookup(variables, "Kp1"),
     [{_,Ki1}] = ets:lookup(variables, "Ki1"),
     [{_,Kp2}] = ets:lookup(variables, "Kp2"),
     [{_,Kd2}] = ets:lookup(variables, "Kd2"),
 
     Target_angle = speed_PI(Dt,Speed,0,Kp1,Ki1),
-    % io:format("~.3f, ~.3f, ~.3f, ~.3f~n",[Speed,Target_angle,Angle,Angle_Offset]),
+    io:format("~.3f, ~.3f, ~.3f~n",[Speed,Target_angle,Angle_kalman]),
     % Target_angle_sat = saturation(Angle_Offset,30),
     Acc = stability_PD(Dt,Angle_kalman,Target_angle,Kp2,Kd2),
     % Acc_sat = saturation(Acc,15),
