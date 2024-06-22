@@ -116,15 +116,11 @@ file_name(Name, Node) ->
     lists:append(
         ["measures/", atom_to_list(Name), "_", atom_to_list(Node), ".csv"]).
 
-
-log_data(_, _, _) ->
-    ok.
-
-% log_data(_, _, false) ->
-%     ok;
-% log_data(File, {Seq, T, Ms}, true) ->
-%     Vals = lists:map(fun(V) -> lists:flatten(io_lib:format("~p", [V])) end, Ms),
-%     S = string:join(Vals, ","),
-%     Bytes = io_lib:format("~p,~p,~s~n", [Seq, T, S]),
-%     ok = filelib:ensure_dir("measures/"),
-%     ok = file:write_file(File, Bytes, [append]).
+log_data(_, _, false) ->
+    ok;
+log_data(File, {Seq, T, Ms}, true) ->
+    Vals = lists:map(fun(V) -> lists:flatten(io_lib:format("~p", [V])) end, Ms),
+    S = string:join(Vals, ","),
+    Bytes = io_lib:format("~p,~p,~s~n", [Seq, T, S]),
+    ok = filelib:ensure_dir("measures/"),
+    ok = file:write_file(File, Bytes, [append]).
