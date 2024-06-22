@@ -32,6 +32,7 @@ init({Cal}) ->
     ets:insert(variables, {"DC_Bias", Cal}),
     ets:insert(variables, {"Offset", 0.0}),
     ets:insert(variables, {"AngleInt", 0.0}),
+    ets:insert(variables, {"Angle_kalman", 0.0}),
 
     ets:insert(variables, {"Angle_Coef_P", 0.0}),
     ets:insert(variables, {"Angle_Coef_I", 0.0}),
@@ -58,9 +59,12 @@ controller(Measures) ->
 
     {Ax,Az,Gy,Speed,Dt,Th} = Measures,
     % ets:insert(variables, {"SpeedMes", Speed}),
-    % ets:insert(variables, {"Angle", Th*180/math:pi()}),
+    ets:insert(variables, {"Angle_kalman", Th}),
     compute_angle({Ax,Az,Gy,Speed,Dt}),
     compute_angle_offset(),
+
+    [{_,Angle}] = ets:lookup(variables, "Angle"),
+    [{_,P}] = ets:lookup(variables, "Angle_Coef_P"),
 
     [{_,Reset}] = ets:lookup(variables, "Reset"),
     
@@ -73,7 +77,7 @@ controller(Measures) ->
 
     Acc = balance_controller2(Dt,Speed),
     % io:format("Acc command: ~p~n",[Acc]),
-    {Acc, Reset}.
+    {Acc, Reset, Angle}.
 
 
 pause_ctrl(R) ->
@@ -158,7 +162,7 @@ balance_controller(Dt,Speed) ->
 
 balance_controller2(Dt,Speed) ->
 
-    [{_,Angle}] = ets:lookup(variables, "Angle"),
+    [{_,Angle_kalman}] = ets:lookup(variables, "Angle_kalman"),
     [{_,Angle_Offset}] = ets:lookup(variables, "Angle_Offset"),
     [{_,Kp1}] = ets:lookup(variables, "Kp1"),
     [{_,Ki1}] = ets:lookup(variables, "Ki1"),
@@ -168,7 +172,7 @@ balance_controller2(Dt,Speed) ->
     Target_angle = speed_PI(Dt,Speed,0,Kp1,Ki1),
     % io:format("~.3f, ~.3f, ~.3f, ~.3f~n",[Speed,Target_angle,Angle,Angle_Offset]),
     % Target_angle_sat = saturation(Angle_Offset,30),
-    Acc = stability_PD(Dt,Angle,Target_angle,Kp2,Kd2),
+    Acc = stability_PD(Dt,Angle_kalman,Target_angle,Kp2,Kd2),
     % Acc_sat = saturation(Acc,15),
     % io:format(~p)
     Acc.
