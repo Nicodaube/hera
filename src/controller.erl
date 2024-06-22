@@ -59,7 +59,7 @@ controller(Measures) ->
     {Ax,Az,Gy,Speed,Dt,Th} = Measures,
     % ets:insert(variables, {"SpeedMes", Speed}),
     % ets:insert(variables, {"Angle", Th*180/math:pi()}),
-    compute_angle(Measures),
+    compute_angle({Ax,Az,Gy,Speed,Dt}),
     compute_angle_offset(),
 
     [{_,Reset}] = ets:lookup(variables, "Reset"),
