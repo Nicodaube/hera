@@ -71,7 +71,7 @@ controller(Measures) ->
         ok
     end,
 
-    Acc = balance_controller(Dt,Speed),
+    Acc = balance_controller2(Dt,Speed),
     % io:format("Acc command: ~p~n",[Acc]),
     {Acc, Reset}.
 
