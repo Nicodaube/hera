@@ -166,7 +166,7 @@ balance_controller2(Dt,Speed) ->
     [{_,Kd2}] = ets:lookup(variables, "Kd2"),
 
     Target_angle = speed_PI(Dt,Speed,0,Kp1,Ki1),
-    io:format("~.3f, ~.3f, ~.3f, ~.3f~n",[Speed,Target_angle,Angle,Angle_Offset]),
+    % io:format("~.3f, ~.3f, ~.3f, ~.3f~n",[Speed,Target_angle,Angle,Angle_Offset]),
     % Target_angle_sat = saturation(Angle_Offset,30),
     Acc = stability_PD(Dt,Angle,Target_angle,Kp2,Kd2),
     % Acc_sat = saturation(Acc,15),
