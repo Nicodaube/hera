@@ -2,7 +2,7 @@
 
 % -export([pid/5]).
 -export([init/1]).
--export([controller/1]).
+-export([controller_PID/1,controller_kalman/1,controller_complem/1]).
 
 -export([modif_coef/1,modif_coef2/1]).
 -export([print_coef/0, print_coef2/0, pause_ctrl/1]).
@@ -55,29 +55,45 @@ init({Cal}) ->
     ok.
 
 
-controller(Measures) ->
+controller_PID(Measures) ->
 
     {Ax,Az,Gy,Speed,Dt,Th} = Measures,
-    % ets:insert(variables, {"SpeedMes", Speed}),
-    ets:insert(variables, {"Angle_kalman", Th}),
+
     compute_angle({Ax,Az,Gy,Speed,Dt}),
     compute_angle_offset(),
 
-    [{_,Angle}] = ets:lookup(variables, "Angle"),
-    [{_,P}] = ets:lookup(variables, "Angle_Coef_P"),
-
     [{_,Reset}] = ets:lookup(variables, "Reset"),
     
-    if   
-    Reset == 0 ->
-        set_offset(Measures);
-    true ->
-        ok
-    end,
-
-    Acc = balance_controller2(Dt,Speed),
+    Acc = balance_controller_PID(Dt,Speed),
     % io:format("Acc command: ~p~n",[Acc]),
+    {Acc, Reset}.
+
+controller_kalman(Measures) ->
+
+    {Ax,Az,Gy,Speed,Dt,Th} = Measures,
+    ets:insert(variables, {"Angle_kalman", Th}),
+
+    compute_angle({Ax,Az,Gy,Speed,Dt}),             %For graphs
+    [{_,Angle}] = ets:lookup(variables, "Angle"),   %For graphs
+
+    compute_angle_offset(),
+
+    [{_,Reset}] = ets:lookup(variables, "Reset"),
+    Acc = balance_controller_kalman(Dt,Speed),
+
     {Acc, Reset, Angle}.
+
+controller_complem(Measures) ->
+
+    {Ax,Az,Gy,Speed,Dt} = Measures,
+
+    compute_angle({Ax,Az,Gy,Speed,Dt}),
+    compute_angle_offset(),
+
+    [{_,Reset}] = ets:lookup(variables, "Reset"),
+    Acc = balance_controller_complem(Dt,Speed),
+
+    {Acc, Reset}.
 
 
 pause_ctrl(R) ->
@@ -105,12 +121,11 @@ print_coef() ->
     io:format("Coefs: ~p, ~p, ~p, ~p, ~p~n",[P,I,D,F,S]),
     ok.
 
-modif_coef2({Kp1,Ki1,Kp2,Kd2,Offset,K}) ->
+modif_coef2({Kp1,Ki1,Kp2,Kd2,K}) ->
     ets:insert(variables, {"Kp1", Kp1}),
     ets:insert(variables, {"Ki1", Ki1}),
     ets:insert(variables, {"Kp2", Kp2}),
     ets:insert(variables, {"Kd2", Kd2}),
-    ets:insert(variables, {"Angle_Offset", Offset}),
     ets:insert(variables, {"K", K}),
     ok.
 
@@ -119,21 +134,15 @@ print_coef2() ->
     [{_,Ki1}] = ets:lookup(variables, "Ki1"),
     [{_,Kp2}] = ets:lookup(variables, "Kp2"),
     [{_,Kd2}] = ets:lookup(variables, "Kd2"),
-    [{_,Angle_Offset}] = ets:lookup(variables, "Angle_Offset"),
     [{_,K}] = ets:lookup(variables, "K"),
-    io:format("Coefs: ~p, ~p, ~p, ~p, ~p, ~p~n",[Kp1,Ki1,Kp2,Kd2,Angle_Offset,K]),
+    io:format("Coefs: ~p, ~p, ~p, ~p, ~p~n",[Kp1,Ki1,Kp2,Kd2,K]),
     ok.
 
-set_offset(Measures) ->
-    [{_,Angle}] = ets:lookup(variables, "Angle"),
-    ets:insert(variables, {"Angle_Offset", Angle+1.0}).
-
-balance_controller(Dt,Speed) ->
+balance_controller_PID(Dt,Speed) ->
 
     [{_,Offset}] = ets:lookup(variables, "Offset"),
     [{_,Angle_Rate}] = ets:lookup(variables, "Angle_Rate"),
     [{_,Angle}] = ets:lookup(variables, "Angle"),
-    % [{_,Speed_mes}] = ets:lookup(variables, "SpeedMes"),
     [{_,Speed_Coef}] = ets:lookup(variables, "Speed_Coef"),
     [{_,AngleInt}] = ets:lookup(variables, "AngleInt"),
 
@@ -160,21 +169,34 @@ balance_controller(Dt,Speed) ->
                          + Speed_Coef * Speed),
     Acc_comm.
 
-balance_controller2(Dt,Speed) ->
+balance_controller_kalman(Dt,Speed) ->
 
     [{_,Angle_kalman}] = ets:lookup(variables, "Angle_kalman"),
-    % [{_,Angle_Offset}] = ets:lookup(variables, "Angle_Offset"),
     [{_,Kp1}] = ets:lookup(variables, "Kp1"),
     [{_,Ki1}] = ets:lookup(variables, "Ki1"),
     [{_,Kp2}] = ets:lookup(variables, "Kp2"),
     [{_,Kd2}] = ets:lookup(variables, "Kd2"),
 
     Target_angle = speed_PI(Dt,Speed,0,Kp1,Ki1),
-    io:format("~.3f, ~.3f, ~.3f~n",[Speed,Target_angle,Angle_kalman]),
-    % Target_angle_sat = saturation(Angle_Offset,30),
     Acc = stability_PD(Dt,Angle_kalman,Target_angle,Kp2,Kd2),
-    % Acc_sat = saturation(Acc,15),
-    % io:format(~p)
+
+    io:format("~.3f, ~.3f, ~.3f~n",[Speed,Target_angle,Angle_kalman]),
+
+    Acc.
+
+balance_controller_complem(Dt,Speed) ->
+
+    [{_,Angle_complem}] = ets:lookup(variables, "Angle"),
+    [{_,Kp1}] = ets:lookup(variables, "Kp1"),
+    [{_,Ki1}] = ets:lookup(variables, "Ki1"),
+    [{_,Kp2}] = ets:lookup(variables, "Kp2"),
+    [{_,Kd2}] = ets:lookup(variables, "Kd2"),
+
+    Target_angle = speed_PI(Dt,Speed,0,Kp1,Ki1),
+    Acc = stability_PD(Dt,Angle_complem,Target_angle,Kp2,Kd2),
+
+    io:format("~.3f, ~.3f, ~.3f~n",[Speed,Target_angle,Angle_complem]),
+
     Acc.
 
 speed_PI(Dt,Speed,SetPoint,Kp,Ki) ->
@@ -207,16 +229,10 @@ saturation(Input, Bound) ->
 
 
 compute_angle({Ax,Az,Gy,Speed,Dt}) ->
-
-    % io:format("~p, ~p~n",[ets:lookup(variables, "DC_Bias"),ets:lookup(variables, "Angle_Rate")]),
-    % io:format("~p~n",[Gy - ets:lookup(variables, "DC_Bias")]),
-    % io:format("~p~n",[1 - ?Coef_Filter]),
-
     [{_,DC_Bias}] = ets:lookup(variables, "DC_Bias"),
     [{_,Angle_Rate}] = ets:lookup(variables, "Angle_Rate"),
     [{_,Angle}] = ets:lookup(variables, "Angle"),
     [{_,K}] = ets:lookup(variables, "K"),
-
 
     %low pass filter on derivative
     New_Angle_Rate = (Gy - DC_Bias) * ?Coef_Filter + Angle_Rate * (1 - ?Coef_Filter), %D
