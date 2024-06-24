@@ -90,10 +90,12 @@ controller_complem(Measures) ->
     compute_angle({Ax,Az,Gy,Speed,Dt}),
     compute_angle_offset(),
 
+    [{_,Angle}] = ets:lookup(variables, "Angle"),   %For graphs
+
     [{_,Reset}] = ets:lookup(variables, "Reset"),
     Acc = balance_controller_complem(Dt,Speed),
 
-    {Acc, Reset}.
+    {Acc, Reset, Angle}.
 
 
 pause_ctrl(R) ->
