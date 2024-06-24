@@ -5,6 +5,7 @@
 -export([controller_kalman/1,controller_complem/1]).
 
 -export([modif_coef/1]).
+-export([set_speed/2]).
 -export([pause_ctrl/1]).
 
 -define(Speed_Limit, 50.0).
