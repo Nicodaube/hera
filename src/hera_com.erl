@@ -59,7 +59,7 @@ decode_half_float(<<>>, Acc) -> Acc.
 
 init() ->
     Socket = open_socket(1),
-    % io:format("Connection established!~n").
+    % io:format("Connection established!~n"),
     loop(Socket).
 
 
@@ -67,6 +67,12 @@ open_socket(Delay) ->
     try open_socket()
     catch
         error:Reason ->
+            if
+                Delay == 1 ->
+                    io:format("~n~nGrisp online!~n");
+                true ->
+                    ok
+            end,
             % io:format("Could not open socket:~p~n", [Reason]),
             % io:format("Retrying in ~p [s]~n", [Delay]),
             timer:sleep(Delay*1000),

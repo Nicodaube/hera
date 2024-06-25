@@ -57,12 +57,15 @@ controller_complem(Measures) ->
     if   
         Reset ->
             if   
-                Angle > 30.0 ->
+                abs(Angle) > 30.0 ->
+                    io:format("Too big~n"),
                     {Acc, 0.0, Angle};
                 true ->
+                    io:format("Perfect~n"),
                     {Acc, 1.0, Angle}  
             end;
         true ->
+            io:format("Pause~n"),
             {Acc, 0.0, Angle}    
     end.
 
