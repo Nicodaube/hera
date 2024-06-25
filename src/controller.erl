@@ -58,12 +58,12 @@ controller_complem(Measures) ->
         Reset ->
             if   
                 Angle > 30.0 ->
-                    {Acc, 0, Angle};
+                    {Acc, 0.0, Angle};
                 true ->
-                    {Acc, 1, Angle}  
+                    {Acc, 1.0, Angle}  
             end;
         true ->
-            {Acc, 0, Angle}    
+            {Acc, 0.0, Angle}    
     end.
 
 

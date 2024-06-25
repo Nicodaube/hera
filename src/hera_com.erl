@@ -58,9 +58,9 @@ decode_half_float(<<>>, Acc) -> Acc.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 init() ->
-    Socket = open_socket(1),
-    io:format("Connection established!~n"),
-    loop(Socket).
+    % Socket = open_socket(1),
+    io:format("GRiSP online!~n").
+    % loop(Socket).
 
 
 open_socket(Delay) ->
