@@ -98,6 +98,8 @@ balance_controller_complem(Dt,Speed,C) ->
 
     [_Stop,_,_,_,Forward,Backward,_Left,_Right] = hera_com:get_bits(C),
 
+    io:format("~p, ~p, ~p, ~p~n", [C, Forward, Backward, hera_com:get_bits(C)]),
+
     % T = erlang:system_time()/1.0e6,
     if   
         Forward ->
