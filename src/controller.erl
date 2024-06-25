@@ -27,15 +27,13 @@ init({Cal}) ->
     ets:insert(variables, {"AngleInt", 0.0}),
     ets:insert(variables, {"Angle_kalman", 0.0}),
     
-
-    ets:insert(variables, {"Kp1", 0.0}),
-    ets:insert(variables, {"Ki1", 0.0}),
-    ets:insert(variables, {"Kp2", 0.0}),
-    ets:insert(variables, {"Kd2", 0.0}),
-    ets:insert(variables, {"K", 0.97}),
+    ets:insert(variables, {"Kp1", -0.12}),
+    ets:insert(variables, {"Ki1", -0.05}),
+    ets:insert(variables, {"Kp2", 23.0}),
+    ets:insert(variables, {"Kd2", 4.0}),
+    ets:insert(variables, {"K", 0.99}),
     
     ets:insert(variables, {"PID_error_int", 0.0}),
-    ets:insert(variables, {"Angle_Offset", 2.7}),
     ets:insert(variables, {"Input_speed", 0.0}),
     ets:insert(variables, {"Speed_time", 0.0}),
 
@@ -58,14 +56,14 @@ controller_complem(Measures) ->
         Reset == 1.0 ->
             if   
                 abs(Angle) > 30.0 ->
-                    io:format("Too big~n"),
+                    % io:format("Too big~n"),
                     {Acc, 0.0, Angle};
                 true ->
-                    io:format("Perfect~n"),
+                    % io:format("Perfect~n"),
                     {Acc, 1.0, Angle}  
             end;
         true ->
-            io:format("Pause~n"),
+            % io:format("Pause~n"),
             {Acc, 0.0, Angle}    
     end.
 
@@ -137,7 +135,7 @@ speed_PI(Dt,Speed,SetPoint,Kp,Ki) ->
     [{_,PID_error_int}] = ets:lookup(variables, "PID_error_int"),
 
     Error = SetPoint - Speed,
-    PID_error_int_new = saturation(PID_error_int + Error * Dt, 30),
+    PID_error_int_new = saturation(PID_error_int + Error * Dt, 60),
     ets:insert(variables, {"PID_error_int", PID_error_int_new}),
     PI_output = Kp * Error + Ki * PID_error_int_new,
     PI_output.
