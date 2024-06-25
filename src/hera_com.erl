@@ -58,17 +58,17 @@ decode_half_float(<<>>, Acc) -> Acc.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 init() ->
-    % Socket = open_socket(1),
-    io:format("GRiSP online!~n").
-    % loop(Socket).
+    Socket = open_socket(1),
+    % io:format("Connection established!~n").
+    loop(Socket).
 
 
 open_socket(Delay) ->
     try open_socket()
     catch
         error:Reason ->
-            io:format("Could not open socket:~p~n", [Reason]),
-            io:format("Retrying in ~p [s]~n", [Delay]),
+            % io:format("Could not open socket:~p~n", [Reason]),
+            % io:format("Retrying in ~p [s]~n", [Delay]),
             timer:sleep(Delay*1000),
             open_socket(min(2*Delay, 4))
     end.
