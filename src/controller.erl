@@ -55,7 +55,7 @@ controller_complem(Measures) ->
 
     Acc = balance_controller_complem(Dt,Speed),
     if   
-        Reset ->
+        Reset == 1.0 ->
             if   
                 abs(Angle) > 30.0 ->
                     io:format("Too big~n"),
@@ -128,7 +128,7 @@ balance_controller_complem(Dt,Speed) ->
 
     Acc = stability_PD(Dt,Angle_complem,Target_angle,Kp2,Kd2),
 
-    io:format("~.3f, ~.3f, ~.3f~n",[Speed,Target_angle,Angle_complem]),
+    % io:format("~.3f, ~.3f, ~.3f~n",[Speed,Target_angle,Angle_complem]),
 
     Acc.
 
