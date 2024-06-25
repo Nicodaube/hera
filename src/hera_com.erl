@@ -31,6 +31,13 @@ send(Name, Seq, Values) ->
     ok.
 
 %
+%Returns a list of each bit in the byte given by Byte
+%e.g. Byte = 163 gives [1,0,1,0,0,0,1,1]
+%
+get_bits(Byte) ->
+	L = [ (Byte band round(math:pow(2,X))) =/=0 || X <- [7,6,5,4,3,2,1,0]].
+
+%
 %Encodes a list of values from double (8 bytes) to half-float (2 bytes)
 %Values = [Double1,Double2,...]
 %
@@ -40,7 +47,7 @@ encode_half_float(Values) ->
 %
 %Decodes a list of values from half-float (2 bytes) to double (8 bytes)
 %Values = <<Hf1A,Hf1B,Hf2A,Hf2B,...>>
-%e.g. <<16#43,16#0A,16#4B,16#0C>> gives [3.52,14.1]
+%e.g. Values = <<16#43,16#0A,16#4B,16#0C>> gives [3.52,14.1] (with some approximation due to the conversion)
 %
 decode_half_float(Values) when is_binary(Values) -> decode_half_float(Values, []). 
 decode_half_float(<<A:8, B:8, Rest/binary>>, Acc) -> decode_half_float(Rest, Acc ++ [dec_hf(<<A, B>>)]); 
@@ -123,9 +130,6 @@ dec_hf(Half_Float) ->
 	B = ((X bsl 2) band 252) bor ((Y bsr 6) band 3),
 	C = ((Y bsl 2) band 252),
 	binary_to_term(<<131,70,A,B,C,0,0,0,0,0>>).
-
-
-
 
 
 

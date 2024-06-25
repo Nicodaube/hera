@@ -42,18 +42,7 @@ init({Cal}) ->
     ets:insert(variables, {"Reset", 1.0}),
     ok.
 
-controller_kalman(Measures) ->
 
-    {Ax,Az,Gy,Speed,Dt,Th} = Measures,
-    ets:insert(variables, {"Angle_kalman", Th}),
-
-    compute_angle({Ax,Az,Gy,Speed,Dt}),             %For graphs
-    [{_,Angle}] = ets:lookup(variables, "Angle"),   %For graphs
-
-    [{_,Reset}] = ets:lookup(variables, "Reset"),
-    Acc = balance_controller_kalman(Dt,Speed),
-
-    {Acc, Reset, Angle}.
 
 controller_complem(Measures) ->
 
@@ -62,11 +51,20 @@ controller_complem(Measures) ->
     compute_angle({Ax,Az,Gy,Speed,Dt}),
 
     [{_,Angle}] = ets:lookup(variables, "Angle"),   %For graphs
-
     [{_,Reset}] = ets:lookup(variables, "Reset"),
-    Acc = balance_controller_complem(Dt,Speed),
 
-    {Acc, Reset, Angle}.
+    Acc = balance_controller_complem(Dt,Speed),
+    if   
+        Reset ->
+            if   
+                Angle > 30.0 ->
+                    {Acc, 0, Angle};
+                true ->
+                    {Acc, 1, Angle}  
+            end;
+        true ->
+            {Acc, 0, Angle}    
+    end.
 
 
 pause_ctrl(R) ->
@@ -184,4 +182,58 @@ compute_angle({Ax,Az,Gy,Speed,Dt}) ->
 
 
     ok.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+controller_kalman(Measures) ->
+
+    {Ax,Az,Gy,Speed,Dt,Th} = Measures,
+    ets:insert(variables, {"Angle_kalman", Th}),
+
+    compute_angle({Ax,Az,Gy,Speed,Dt}),             %For graphs
+    [{_,Angle}] = ets:lookup(variables, "Angle"),   %For graphs
+
+    [{_,Reset}] = ets:lookup(variables, "Reset"),
+    Acc = balance_controller_kalman(Dt,Speed),
+
+    {Acc, Reset, Angle}.
 
