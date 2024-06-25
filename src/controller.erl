@@ -96,7 +96,7 @@ balance_controller_complem(Dt,Speed,C) ->
     [{_,Kp2}] = ets:lookup(variables, "Kp2"),
     [{_,Kd2}] = ets:lookup(variables, "Kd2"),
 
-    [_Stop,_,_,_,Forward,Backward,_Left,_Right] = C,
+    [_Stop,_,_,_,Forward,Backward,_Left,_Right] = hera_com:get_bits(C),
 
     % T = erlang:system_time()/1.0e6,
     if   
