@@ -5,7 +5,7 @@
 -export([controller_kalman/1,controller_complem/1]).
 
 -export([modif_coef/1]).
--export([set_speed/2]).
+% -export([set_speed/2]).
 -export([pause_ctrl/1]).
 
 -define(Speed_Limit, 50.0).
@@ -34,8 +34,8 @@ init({Cal}) ->
     ets:insert(variables, {"K", 0.99}),
     
     ets:insert(variables, {"PID_error_int", 0.0}),
-    ets:insert(variables, {"Input_speed", 0.0}),
-    ets:insert(variables, {"Speed_time", 0.0}),
+    % ets:insert(variables, {"Input_speed", 0.0}),
+    % ets:insert(variables, {"Speed_time", 0.0}),
 
     ets:insert(variables, {"Reset", 1.0}),
     ok.
@@ -44,14 +44,14 @@ init({Cal}) ->
 
 controller_complem(Measures) ->
 
-    {Ax,Az,Gy,Speed,Dt} = Measures,
+    {Ax,Az,Gy,Speed,Dt,C} = Measures,
 
     compute_angle({Ax,Az,Gy,Speed,Dt}),
 
     [{_,Angle}] = ets:lookup(variables, "Angle"),   %For graphs
     [{_,Reset}] = ets:lookup(variables, "Reset"),
 
-    Acc = balance_controller_complem(Dt,Speed),
+    Acc = balance_controller_complem(Dt,Speed,C),
     if   
         Reset == 1.0 ->
             if   
@@ -69,15 +69,14 @@ controller_complem(Measures) ->
 
 
 pause_ctrl(R) ->
-    [{_,Angle}] = ets:lookup(variables, "Angle"),
     ets:insert(variables, {"Reset", R}),
     ets:insert(variables, {"PID_error_int", 0.0}),
     ok.
 
-set_speed(Speed, Time) ->
-    ets:insert(variables, {"Input_speed", Speed}),
-    ets:insert(variables, {"Speed_time", erlang:system_time()/1.0e6+Time}),
-    ok.
+% set_speed(Speed, Time) ->
+%     ets:insert(variables, {"Input_speed", Speed}),
+%     ets:insert(variables, {"Speed_time", erlang:system_time()/1.0e6+Time}),
+%     ok.
 
 modif_coef({Kp1,Ki1,Kp2,Kd2,K}) ->
     ets:insert(variables, {"Kp1", Kp1}),
@@ -89,36 +88,26 @@ modif_coef({Kp1,Ki1,Kp2,Kd2,K}) ->
     ets:insert(variables, {"PID_error_int", 0.0}),
     ok.
 
-balance_controller_kalman(Dt,Speed) ->
-
-    [{_,Angle_kalman}] = ets:lookup(variables, "Angle_kalman"),
-    [{_,Kp1}] = ets:lookup(variables, "Kp1"),
-    [{_,Ki1}] = ets:lookup(variables, "Ki1"),
-    [{_,Kp2}] = ets:lookup(variables, "Kp2"),
-    [{_,Kd2}] = ets:lookup(variables, "Kd2"),
-
-    Target_angle = speed_PI(Dt,Speed,0,Kp1,Ki1),
-    Acc = stability_PD(Dt,Angle_kalman,Target_angle,Kp2,Kd2),
-
-    io:format("~.3f, ~.3f, ~.3f~n",[Speed,Target_angle,Angle_kalman]),
-
-    Acc.
-
-balance_controller_complem(Dt,Speed) ->
+balance_controller_complem(Dt,Speed,C) ->
 
     [{_,Angle_complem}] = ets:lookup(variables, "Angle"),
     [{_,Kp1}] = ets:lookup(variables, "Kp1"),
     [{_,Ki1}] = ets:lookup(variables, "Ki1"),
     [{_,Kp2}] = ets:lookup(variables, "Kp2"),
     [{_,Kd2}] = ets:lookup(variables, "Kd2"),
-    [{_,Input_speed}] = ets:lookup(variables, "Input_speed"),
-    [{_,Speed_time}] = ets:lookup(variables, "Speed_time"),
 
-    T = erlang:system_time()/1.0e6,
+    [_Stop,_,_,_,Forward,Backward,_Left,_Right] = C,
+
+    % T = erlang:system_time()/1.0e6,
     if   
-        T < Speed_time ->
-            Speed_setpoint = Input_speed;
+        Forward ->
+            io:format("Going forwards ~n"),
+            Speed_setpoint = 15.0;
+        Backward ->
+            io:format("Going backwards ~n"),
+            Speed_setpoint = -15.0;
         true ->
+            io:format("Stability ~n"),
             Speed_setpoint = 0
     end,
 
@@ -238,3 +227,17 @@ controller_kalman(Measures) ->
 
     {Acc, Reset, Angle}.
 
+balance_controller_kalman(Dt,Speed) ->
+
+    [{_,Angle_kalman}] = ets:lookup(variables, "Angle_kalman"),
+    [{_,Kp1}] = ets:lookup(variables, "Kp1"),
+    [{_,Ki1}] = ets:lookup(variables, "Ki1"),
+    [{_,Kp2}] = ets:lookup(variables, "Kp2"),
+    [{_,Kd2}] = ets:lookup(variables, "Kd2"),
+
+    Target_angle = speed_PI(Dt,Speed,0,Kp1,Ki1),
+    Acc = stability_PD(Dt,Angle_kalman,Target_angle,Kp2,Kd2),
+
+    io:format("~.3f, ~.3f, ~.3f~n",[Speed,Target_angle,Angle_kalman]),
+
+    Acc.
