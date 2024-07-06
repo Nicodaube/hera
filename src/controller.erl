@@ -51,10 +51,14 @@ controller_complem(Measures) ->
     [{_,Angle}] = ets:lookup(variables, "Angle"),   %For graphs
     [{_,Reset}] = ets:lookup(variables, "Reset"),
 
+    [_Stop,_,_,Get_up,_Forward,_Backward,_Left,_Right] = hera_com:get_bits(C),
+
     Acc = balance_controller_complem(Dt,Speed,C),
     if   
         Reset == 1.0 ->
-            if   
+            if  
+                Get_Up ->
+                    {sign(Angle)*30.0,1.0, Angle}
                 abs(Angle) > 30.0 ->
                     % io:format("Too big~n"),
                     {Acc, 0.0, Angle};
@@ -96,20 +100,20 @@ balance_controller_complem(Dt,Speed,C) ->
     [{_,Kp2}] = ets:lookup(variables, "Kp2"),
     [{_,Kd2}] = ets:lookup(variables, "Kd2"),
 
-    [_Stop,_,_,_,Forward,Backward,_Left,_Right] = hera_com:get_bits(C),
+    [_Stop,_,_,Get_up,Forward,Backward,_Left,_Right] = hera_com:get_bits(C),
 
     % io:format("~p, ~p, ~p, ~p~n", [C, Forward, Backward, hera_com:get_bits(C)]),
 
     % T = erlang:system_time()/1.0e6,
     if   
         Forward ->
-            io:format("Going forwards ~n"),
+            % io:format("Going forwards ~n"),
             Speed_setpoint = 15.0;
         Backward ->
-            io:format("Going backwards ~n"),
+            % io:format("Going backwards ~n"),
             Speed_setpoint = -15.0;
         true ->
-            io:format("Stability ~n"),
+            % io:format("Stability ~n"),
             Speed_setpoint = 0
     end,
 
@@ -172,10 +176,15 @@ compute_angle({Ax,Az,Gy,Speed,Dt}) ->
     %New_Angle_Int = AngleInt + New_Angle*Dt, %I
     %ets:insert(variables, {"AngleInt", New_Angle_Int}),
 
-
     ok.
 
-
+sign(Value) ->
+    if
+        Value < 0 ->
+            -1;
+        true ->
+            1
+    end.
 
 
 
