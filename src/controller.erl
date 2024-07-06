@@ -58,7 +58,7 @@ controller_complem(Measures) ->
         Reset == 1.0 ->
             if  
                 Get_Up ->
-                    {sign(Angle)*30.0,1.0, Angle}
+                    {sign(Angle)*30.0,1.0, Angle};
                 abs(Angle) > 30.0 ->
                     % io:format("Too big~n"),
                     {Acc, 0.0, Angle};
