@@ -1,6 +1,7 @@
 -module(pid_controller).
 
 -export([pid_init/4, pid_init/6]).
+-export([saturation/2, sign/1]).
 
 %Controller initialisation without limits on the command and on the integral error
 pid_init(Kp, Ki, Kd, Set_Point) ->
@@ -21,19 +22,19 @@ pid_interface({Kp, Ki, Kd, Limit, Int_limit}, {Set_point, Current_input}, {Prev_
 
 		%Parameter modification 
 		{_, {kp, New_Kp}} ->
-			pid_controller({New_Kp, Ki, Kd, Limit, Int_limit}, {Set_point, Current_input}, {Prev_error, T0, Integral_error});
+			pid_interface({New_Kp, Ki, Kd, Limit, Int_limit}, {Set_point, Current_input}, {Prev_error, T0, Integral_error});
 		{_, {ki, New_Ki}} ->
-			pid_controller({Kp, New_Ki, Kd, Limit, Int_limit}, {Set_point, Current_input}, {Prev_error, T0, Integral_error});
+			pid_interface({Kp, New_Ki, Kd, Limit, Int_limit}, {Set_point, Current_input}, {Prev_error, T0, Integral_error});
 		{_, {kd, New_Kd}} ->
-			pid_controller({Kp, Ki, New_Kd, Limit, Int_limit}, {Set_point, Current_input}, {Prev_error, T0, Integral_error});
+			pid_interface({Kp, Ki, New_Kd, Limit, Int_limit}, {Set_point, Current_input}, {Prev_error, T0, Integral_error});
 		{_, {limit, New_Limit}} ->
-			pid_controller({Kp, Ki, Kd, New_Limit, Int_limit}, {Set_point, Current_input}, {Prev_error, T0, Integral_error});
+			pid_interface({Kp, Ki, Kd, New_Limit, Int_limit}, {Set_point, Current_input}, {Prev_error, T0, Integral_error});
 		{_, {int_limit, New_Int_limit}} ->
-			pid_controller({Kp, Ki, Kd, Limit, New_Int_limit}, {Set_point, Current_input}, {Prev_error, T0, Integral_error});
+			pid_interface({Kp, Ki, Kd, Limit, New_Int_limit}, {Set_point, Current_input}, {Prev_error, T0, Integral_error});
 
 		%Setpoint modification
 		{_, {set_point, New_Set_point}} ->
-			pid_controller({Kp, Ki, Kd, Limit, Int_limit}, {New_Set_point, Current_input}, {Prev_error, T0, Integral_error});
+			pid_interface({Kp, Ki, Kd, Limit, Int_limit}, {New_Set_point, Current_input}, {Prev_error, T0, Integral_error});
 		
 		%Get next value
 		{PID, {input, New_input}} ->
@@ -41,7 +42,7 @@ pid_interface({Kp, Ki, Kd, Limit, Int_limit}, {Set_point, Current_input}, {Prev_
 
 		%Reset integral error
 		{_, {reset, _}} ->
-			pid_controller({Kp, Ki, Kd, Limit, Int_limit}, {Set_point, Current_input}, {Prev_error, T0, 0})
+			pid_interface({Kp, Ki, Kd, Limit, Int_limit}, {Set_point, Current_input}, {Prev_error, T0, 0})
   end.
 
 %Sends the next value for the command to the process with Pid = Output_PID
@@ -58,7 +59,7 @@ pid_controller_iteration({Kp, Ki, Kd, Limit, Int_limit}, {Set_point, Input}, {Pr
   %Send control to the process with Pid = Output_PID
   Output_PID ! {self(), {control, Command}},
 
-  pid_controller({Kp, Ki, Kd, Limit, Int_limit}, {Set_point, Input}, {Error, T1, New_Integral_error}).
+  pid_interface({Kp, Ki, Kd, Limit, Int_limit}, {Set_point, Input}, {Error, T1, New_Integral_error}).
 
 
 saturation(Value, Limit) ->
