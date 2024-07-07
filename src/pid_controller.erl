@@ -1,19 +1,19 @@
 -module(pid_controller).
 
--export([pid_controller/4, pid_controller/6]).
+-export([pid_init/4, pid_init/6]).
 
 %Controller initialisation without limits on the command and on the integral error
-pid_controller(Kp, Ki, Kd, Set_Point) ->
+pid_init(Kp, Ki, Kd, Set_Point) ->
   T0 = erlang:system_time() * 1.0e-9,
-  pid_controller({Kp, Ki, Kd, -1, -1}, {Set_Point, Set_Point}, {0, T0, 0}).
+  pid_interface({Kp, Ki, Kd, -1, -1}, {Set_Point, Set_Point}, {0, T0, 0}).
 
 %Complete controller initialisation
-pid_controller(Kp, Ki, Kd, Limit, Int_limit, Set_Point) ->
+pid_init(Kp, Ki, Kd, Limit, Int_limit, Set_Point) ->
   T0 = erlang:system_time() * 1.0e-9,
-  pid_controller({Kp, Ki, Kd, Limit, Int_limit}, {Set_Point, Set_Point}, {0, T0, 0}).
+  pid_interface({Kp, Ki, Kd, Limit, Int_limit}, {Set_Point, Set_Point}, {0, T0, 0}).
 
 %General case of the controller
-pid_controller({Kp, Ki, Kd, Limit, Int_limit}, {Set_point, Current_input}, {Prev_error, T0, Integral_error}) ->
+pid_interface({Kp, Ki, Kd, Limit, Int_limit}, {Set_point, Current_input}, {Prev_error, T0, Integral_error}) ->
 	receive
 		%Exit process
 		{_, {exit}} ->
