@@ -30,10 +30,11 @@ init({Cal}) ->
     ets:insert(variables, {"Kp1", -0.12}),
     ets:insert(variables, {"Ki1", -0.05}),
     ets:insert(variables, {"Kp2", 23.0}),
-    ets:insert(variables, {"Kd2", 4.0}),
-    ets:insert(variables, {"K", 0.99}),
+    ets:insert(variables, {"Kd2", 4.5}),
+    ets:insert(variables, {"K", 0.996}),
     
     ets:insert(variables, {"PID_error_int", 0.0}),
+    ets:insert(variables, {"V_ref", 0.0}),
     % ets:insert(variables, {"Input_speed", 0.0}),
     % ets:insert(variables, {"Speed_time", 0.0}),
 
@@ -99,25 +100,35 @@ balance_controller_complem(Dt,Speed,C) ->
     [{_,Ki1}] = ets:lookup(variables, "Ki1"),
     [{_,Kp2}] = ets:lookup(variables, "Kp2"),
     [{_,Kd2}] = ets:lookup(variables, "Kd2"),
+    [{_,V_ref}] = ets:lookup(variables, "V_ref"),
 
     [_Stop,_,_,Get_up,Forward,Backward,_Left,_Right] = hera_com:get_bits(C),
 
-    % io:format("~p, ~p, ~p, ~p~n", [C, Forward, Backward, hera_com:get_bits(C)]),
-
-    % T = erlang:system_time()/1.0e6,
+    Accel_speed = 20.0,
     if   
         Forward ->
-            % io:format("Going forwards ~n"),
-            Speed_setpoint = 15.0;
+            io:format("Accelerating !~n"),
+            V_ref_new = saturation(V_ref+Accel_speed*Dt, Accel_speed);
         Backward ->
-            % io:format("Going backwards ~n"),
-            Speed_setpoint = -15.0;
+            io:format("Decelerating !~n"),
+            V_ref_new = saturation(V_ref- Accel_speed*Dt, Accel_speed);
         true ->
-            % io:format("Stability ~n"),
-            Speed_setpoint = 0
+            if
+                V_ref > 0.5  -> 
+                    io:format("Decelerating !~n"),
+                    V_ref_new = saturation(V_ref- Accel_speed*Dt, Accel_speed);
+                V_ref > -0.5 -> 
+                    io:format("Accelerating !~n"),
+                    V_ref_new = saturation(V_ref+Accel_speed*Dt, Accel_speed);
+                true ->
+                    io:format("Stopped !~n"),
+                    V_ref_new = 0.0
+            end
     end,
 
-    Target_angle = speed_PI(Dt,Speed,Speed_setpoint,Kp1,Ki1),
+    ets:insert(variables, {"V_ref", V_ref_new}),
+
+    Target_angle = speed_PI(Dt,Speed,V_ref_new,Kp1,Ki1),
 
     Acc = stability_PD(Dt,Angle_complem,Target_angle,Kp2,Kd2),
 
