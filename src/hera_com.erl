@@ -36,7 +36,12 @@ send(Name, Seq, Values) ->
 %e.g. Byte = 163 gives [1,0,1,0,0,0,1,1]
 %
 get_bits(Byte) ->
-	L = [ (Byte band round(math:pow(2,X))) =/=0 || X <- [7,6,5,4,3,2,1,0]].
+    if
+        Byte =/= 255 ->
+            L = [ (Byte band round(math:pow(2,X))) =/=0 || X <- [7,6,5,4,3,2,1,0]];
+        true ->
+            [false, false, false, false, false, false, false, false]
+    end.
 
 %
 %Encodes a list of values from double (8 bytes) to half-float (2 bytes)
