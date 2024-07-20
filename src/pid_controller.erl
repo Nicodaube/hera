@@ -5,6 +5,9 @@
 
 %Controller initialisation without limits on the command and on the integral error
 pid_init(Kp, Ki, Kd, Set_Point) ->
+
+  process_flag(priority, max),
+
   T0 = erlang:system_time() * 1.0e-9,
   pid_interface({Kp, Ki, Kd, -1, -1}, {Set_Point, Set_Point}, {0, T0, 0}).
 
