@@ -33,12 +33,12 @@ send(Name, Seq, Values) ->
 
 %
 %Returns a list of each bit in the byte given by Byte
-%e.g. Byte = 163 gives [1,0,1,0,0,0,1,1]
+%e.g. Byte = 163 gives [true, false, true, false, false, false, true, true]
 %
 get_bits(Byte) ->
     if
         Byte =/= 255 ->
-            L = [ (Byte band round(math:pow(2,X))) =/=0 || X <- [7,6,5,4,3,2,1,0]];
+            L = [ (Byte band round(math:pow(2,X))) =/= 0 || X <- [7,6,5,4,3,2,1,0]];
         true ->
             [false, false, false, false, false, false, false, false]
     end.

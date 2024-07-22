@@ -178,7 +178,7 @@ compute_angle({Ax,Az,Gy,Speed,Dt}) ->
     %Delta angle computed from gyro
     Delta_Gyr = New_Angle_Rate * Dt,
     %Absolute angle computed form accelerometer
-    Angle_Acc = math:atan(Ax / Az) * 180 / math:pi(),
+    Angle_Acc = math:atan(Az / (-Ax)) * 180 / math:pi(),
 
     %complementary filter
     New_Angle = (Angle + Delta_Gyr) * K + (1 - K) * Angle_Acc, 
@@ -237,7 +237,7 @@ sign(Value) ->
 
 
 controller_kalman(Measures) ->
-
+    % {Az,-Ax}
     {Ax,Az,Gy,Speed,Dt,Th} = Measures,
     ets:insert(variables, {"Angle_kalman", Th}),
 
