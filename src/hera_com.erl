@@ -52,13 +52,13 @@ encode_half_float(Values) ->
 
 %
 %Decodes a list of values from half-float (2 bytes) to double (8 bytes)
-%Values = <<Hf1A,Hf1B,Hf2A,Hf2B,...>>
-%e.g. Values = <<16#43,16#0A,16#4B,16#0C>> gives [3.52,14.1] (with some approximation due to the conversion)
+%Values = [<<Hf1A, Hf1B>>, <<Hf2A, Hf2B>>, ...]
+%e.g. Values = [<<16#43,16#0A>>, <<16#4B,16#0C>>] gives [3.52, 14.1] (with some approximation due to the conversion)
 %
-decode_half_float(Values) when is_binary(Values) -> decode_half_float(Values, []). 
-decode_half_float(<<A:8, B:8, Rest/binary>>, Acc) -> decode_half_float(Rest, Acc ++ [dec_hf(<<A, B>>)]); 
-decode_half_float(<<>>, Acc) -> Acc.
-
+decode_half_float(Values) when is_list(Values) -> decode_half_float(Values, []). 
+decode_half_float([<<A:8, B:8>> | Rest], Acc) -> decode_half_float(Rest, Acc ++ [dec_hf(<<A, B>>)]); 
+decode_half_float([], Acc) -> Acc.
+ 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Internal functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
