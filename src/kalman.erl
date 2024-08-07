@@ -45,7 +45,7 @@ ekf({X0, P0}, {F, Jf}, {H, Jh}, Q, R, Z) ->
     P1 = mat:'-'(Pp, mat:eval([K, '*', Jhx, '*', Pp])),
     {X1, P1}.
 
-%% Same function as ekf/
+%% Same function as ekf/ with command input
 ekf_control({X0, P0}, {F, Jf}, {H, Jh}, Q, R, Z, U) -> 
     % Prediction
     Xp = F(X0,U),

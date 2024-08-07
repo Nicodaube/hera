@@ -2,8 +2,6 @@
 
 -export([start_link/0]).
 -export([send/3]).
--export([encode_half_float/1,decode_half_float/1]).
--export([get_bits/1]).
 
 -define(MULTICAST_ADDR, {224,0,2,15}).
 -define(MULTICAST_PORT, 62476).
@@ -28,7 +26,7 @@ send(Name, Seq, Values) ->
     try ?MODULE ! {send_packet, term_to_binary(Message)}
     catch
         error:_ -> ok
-	end,
+    end,
     ok.
 
 %
@@ -53,7 +51,7 @@ encode_half_float(Values) ->
 %
 %Decodes a list of values from half-float (2 bytes) to double (8 bytes)
 %Values = [<<Hf1A, Hf1B>>, <<Hf2A, Hf2B>>, ...]
-%e.g. Values = [<<16#43,16#0A>>, <<16#4B,16#0C>>] gives [3.52, 14.1] (with some approximation due to the conversion)
+%e.g. Values = [<<16#43,16#0A>>, <<16#4B,16#0C>>] gives [3.52, 14.1]
 %
 decode_half_float(Values) when is_list(Values) -> decode_half_float(Values, []). 
 decode_half_float([<<A:8, B:8>> | Rest], Acc) -> decode_half_float(Rest, Acc ++ [dec_hf(<<A, B>>)]); 
@@ -65,7 +63,7 @@ decode_half_float([], Acc) -> Acc.
 
 init() ->
     Socket = open_socket(1),
-    % io:format("Connection established!~n"),
+    io:format("Connection established!~n"),
     loop(Socket).
 
 
@@ -73,16 +71,10 @@ open_socket(Delay) ->
     try open_socket()
     catch
         error:Reason ->
-            if
-                Delay == 1 ->
-                    io:format("~n~nGrisp online!~n");
-                true ->
-                    ok
-            end,
-            % io:format("Could not open socket:~p~n", [Reason]),
-            % io:format("Retrying in ~p [s]~n", [Delay]),
+            io:format("Could not open socket:~p~n", [Reason]),
+            io:format("Retrying in ~p [s]~n", [Delay]),
             timer:sleep(Delay*1000),
-            open_socket(min(2*Delay, 4))
+            open_socket(min(2*Delay, 8))
     end.
 
 

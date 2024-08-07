@@ -116,6 +116,7 @@ file_name(Name, Node) ->
     lists:append(
         ["measures/", atom_to_list(Name), "_", atom_to_list(Node), ".csv"]).
 
+
 log_data(_, _, false) ->
     ok;
 log_data(File, {Seq, T, Ms}, true) ->
