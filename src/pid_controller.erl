@@ -80,24 +80,3 @@ sign(Value) ->
         true ->
             1
     end.
-
-
-
-
-% test() ->
-%   io:format("test~n"),
-
-%   %io:format("time: ~p~n", [erlang:monotonic_time()*1.0e-7]),
-%   %timer:sleep(1000),
-%   %io:format("time: ~p~n", [erlang:monotonic_time()*1.0e-7]),
-
-%   PID = spawn(pid_controller, pid_controller, [0, 1, 0, 0, 0, 1]),
-
-
-%   PID_printer = spawn(pid_controller, printer, [PID, 0]),
-%   PID_printer ! {self(), {test}},
-%   timer:sleep(1000),
-%   PID ! {self(), {kp, 10}},
-%   timer:sleep(1000),
-%   %exit
-%   PID ! {self(), {exit}}.
