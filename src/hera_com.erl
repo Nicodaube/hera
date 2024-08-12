@@ -2,6 +2,8 @@
 
 -export([start_link/0]).
 -export([send/3]).
+-export([encode_half_float/1,decode_half_float/1]).
+-export([get_bits/1]).
 
 -define(MULTICAST_ADDR, {224,0,2,15}).
 -define(MULTICAST_PORT, 62476).
