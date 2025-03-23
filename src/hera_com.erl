@@ -86,15 +86,7 @@ open_socket() ->
         Addr || {_, Opts} <- Addrs, {addr, Addr} <- Opts,
         size(Addr) == 4, Addr =/= {127,0,0,1}
     ]),
-    {ok, Socket} = gen_udp:open(?MULTICAST_PORT, [
-        binary,
-        inet,
-        {active, true},
-        {multicast_if, OwnAddr},
-        {multicast_loop, true},
-        {reuseaddr, true},
-        {add_membership, {?MULTICAST_ADDR, OwnAddr}}
-    ]),
+    gen_udp:open(?MULTICAST_PORT, [binary, {active, true}, {reuseaddr, true}]),
     Socket.
 
 
