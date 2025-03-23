@@ -5,8 +5,8 @@
 -export([encode_half_float/1,decode_half_float/1]).
 -export([get_bits/1]).
 
--define(MULTICAST_ADDR, {224,0,2,15}).
--define(MULTICAST_PORT, 62476).
+-define(MULTICAST_ADDR, {172,20,10,8}).
+-define(MULTICAST_PORT, 5000).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% API
@@ -109,6 +109,7 @@ loop(Socket) ->
                     ok
             end;
         {send_packet, Packet} ->
+            io:format("[HERA_COMM] sending ~p to ~p : ~p ~n", [Packet, ?MULTICAST_ADDR, ?MULTICAST_PORT]),
             gen_udp:send(Socket, ?MULTICAST_ADDR, ?MULTICAST_PORT, Packet);
         _ ->
             ok
