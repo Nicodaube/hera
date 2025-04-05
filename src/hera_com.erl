@@ -65,7 +65,7 @@ decode_half_float([], Acc) -> Acc.
 
 init() ->
     Socket = open_socket(1),
-    io:format("Connection established!~n"),
+    io:format("[HERA_COMM] Connection established!~n"),
     loop(Socket).
 
 
@@ -73,8 +73,8 @@ open_socket(Delay) ->
     try open_socket()
     catch
         error:Reason ->
-            io:format("Could not open socket:~p~n", [Reason]),
-            io:format("Retrying in ~p [s]~n", [Delay]),
+            io:format("[HERA_COMM] Could not open socket:~p~n", [Reason]),
+            io:format("[HERA_COMM] Retrying in ~p [s]~n", [Delay]),
             timer:sleep(Delay*1000),
             open_socket(min(2*Delay, 8))
     end.
@@ -111,9 +111,13 @@ loop(Socket) ->
 handle_string_packet(String) ->
     case string:tokens(String, ": ,") of 
         ["Pos", Ids, Xs, Ys] ->
+            % Position string received from python server
             Id = list_to_integer(Ids),
             X = list_to_float(Xs),
             Y = list_to_float(Ys) ,
+            SensorName = list_to_atom("sensor" ++ Ids),
+            hera_data:store(pos, SensorName, 0, [X, Y]),
+            hera_sub:notify({start_measure, Id}),
             io:format("[HERA_COM] Received Pos ~p => {~p,~p}~n", [Id, X, Y]);
         _ ->
             io:format("[HERA_COM] Received unmatched string ~p~n",[String])
