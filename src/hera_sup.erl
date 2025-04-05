@@ -35,5 +35,9 @@ init([]) ->
         start => {hera_measure_sup, start_link, []},
         type => supervisor
     },
-    ChildSpecs = [HeraData, HeraCom, HeraMeasureSup],
+    HeraSub = #{
+    id => hera_sub,
+    start => {hera_sub, start_link, []}
+    },
+    ChildSpecs = [HeraData, HeraCom, HeraMeasureSup, HeraSub],
     {ok, {SupFlags, ChildSpecs}}.
