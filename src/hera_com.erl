@@ -5,8 +5,8 @@
 -export([encode_half_float/1,decode_half_float/1]).
 -export([get_bits/1]).
 
--define(MULTICAST_ADDR, {172,20,10,8}).
--define(MULTICAST_PORT, 5000).
+-define(MULTICAST_ADDR, {172,20,10,15}).
+-define(MULTICAST_PORT, 9000).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% API
@@ -93,20 +93,31 @@ open_socket() ->
 loop(Socket) ->
     receive
         {udp, _Sock, _IP, _InPortNo, Packet} ->
-            Message = binary_to_term(Packet),
-            case Message of
+            case catch binary_to_term(Packet) of
+                {'EXIT', _} ->
+                    handle_string_packet(binary_to_list(Packet));
                 {hera_data, Name, From, Seq, Values} ->
-                    hera_data:store(Name, From, Seq, Values);
-                _ ->
-                    ok
+                    hera_data:store(Name, From, Seq, Values)
             end;
-        {send_packet, Packet} ->
+        {send_packet_unicast, Packet} ->
             io:format("[HERA_COMM] sending ~p to ~p : ~p ~n", [Packet, ?MULTICAST_ADDR, ?MULTICAST_PORT]),
             gen_udp:send(Socket, ?MULTICAST_ADDR, ?MULTICAST_PORT, Packet);
         _ ->
             ok
     end,
     loop(Socket).
+    
+
+handle_string_packet(String) ->
+    case string:tokens(String, ": ,") of 
+        ["Pos", Ids, Xs, Ys] ->
+            Id = list_to_integer(Ids),
+            X = list_to_integer(Xs),
+            Y = list_to_integer(Ys),
+            io:format("[HERA_COM] Received Pos ~p => {~p,~p}~n", [Id, X, Y]);
+        _ ->
+            io:format("[HERA_COM] Received unmatched string ~p~n",[String])
+    end.
 
 
 %Encodes one value from a double to a half-float
