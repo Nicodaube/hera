@@ -82,7 +82,7 @@ open_socket(Delay) ->
 
 open_socket() ->
     {ok, Addrs} = inet:getifaddrs(),
-    OwnAddr = hd([
+    _ = hd([
         Addr || {_, Opts} <- Addrs, {addr, Addr} <- Opts,
         size(Addr) == 4, Addr =/= {127,0,0,1}
     ]),
@@ -112,8 +112,8 @@ handle_string_packet(String) ->
     case string:tokens(String, ": ,") of 
         ["Pos", Ids, Xs, Ys] ->
             Id = list_to_integer(Ids),
-            X = list_to_integer(Xs),
-            Y = list_to_integer(Ys),
+            X = list_to_float(Xs),
+            Y = list_to_float(Ys) ,
             io:format("[HERA_COM] Received Pos ~p => {~p,~p}~n", [Id, X, Y]);
         _ ->
             io:format("[HERA_COM] Received unmatched string ~p~n",[String])
