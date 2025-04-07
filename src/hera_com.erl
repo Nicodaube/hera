@@ -130,17 +130,18 @@ open_socket() ->
                 case catch binary_to_term(Packet) of
                     {'EXIT', _} ->
                         handle_string_packet(binary_to_list(Packet));
-                    {hera_data, Name, From, Seq, Values} ->                        
+                    {hera_data, Name, From, Seq, Values} -> 
+                        io:format("[HERA_COM] received ~p from ~p~n", [Values, Name]),                       
                         hera_data:store(Name, From, Seq, Values)
                 end;
             {send_packet, Packet} ->
                 Multicast_enabled = persistent_term:get(multicast),
                 if 
                     Multicast_enabled ->
-                        io:format("[HERA_COMM] broadcasting ~p on Port: ~p ~n", [Packet, ?PORT]),
+                        io:format("[HERA_COM] broadcasting ~p on Port: ~p ~n", [Packet, ?PORT]),
                         gen_udp:send(Socket, ?MULTICAST_ADDR, ?PORT, Packet);
                     true ->
-                        io:format("[HERA_COMM] unicasting ~p to all known devices ~n", [Packet]),
+                        io:format("[HERA_COM] unicasting ~p to all known devices ~n", [Packet]),
                         [gen_udp:send(Socket, IP, Port, Packet) || {_, IP, Port} <- persistent_term:get(devices)]
                 end;
             {send_packet_unicast, Name, Packet} ->
