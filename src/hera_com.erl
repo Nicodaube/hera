@@ -33,19 +33,14 @@ send(Name, Seq, Values) ->
     ok.
 
 send_unicast(Name, Message, Type) ->
-    case Type of
-      "UTF8" ->
-        NewMessage = Message;
-      "Binary" ->
-        NewMessage = term_to_binary(Message);
-      _ ->
-        NewMessage = Message
+    NewMessage = case Type of
+        "UTF8" -> Message;
+        "Binary" -> term_to_binary(Message);
+        _ -> Message
     end,
-    try ?MODULE ! {send_packet_unicast, Name, NewMessage}
-    catch
-        error:_ -> ok
-    end,
+    ?MODULE ! {send_packet_unicast, Name, NewMessage},
     ok.
+    
 
 %
 %Returns a list of each bit in the byte given by Byte
@@ -147,15 +142,12 @@ open_socket() ->
                     true ->
                         [gen_udp:send(Socket, IP, Port, Packet) || {_, IP, Port} <- persistent_term:get(devices)]
                 end;
-            {send_packet_unicast, Name, Message} ->
+            {send_packet_unicast, Name, Packet} ->
                 Devices = persistent_term:get(devices),
                 SelectedDevice = lists:keyfind(Name, 1, Devices),
                 case SelectedDevice of
-                  false ->
-                    io:format("[HERA_COM] Unregistered Device : ~p~n", [Name]);
-                  {_, IP, Port} ->
-                    Packet = term_to_binary(Message),
-                    gen_udp:send(Socket, IP, Port, Packet)
+                  false -> io:format("[HERA_COM] Unregistered Device : ~p~n", [Name]);
+                  {_, IP, Port} -> gen_udp:send(Socket, IP, Port, Packet)
                 end;             
                 
             _ ->
