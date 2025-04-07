@@ -1,7 +1,7 @@
 -module(hera_com).
 
 -export([start_link/0]).
--export([send/3, send_unicast/2, addDevice/3]).
+-export([send/3, send_unicast/2, add_device/3]).
 -export([encode_half_float/1,decode_half_float/1]).
 -export([get_bits/1]).
 
@@ -114,7 +114,7 @@ open_socket() ->
     Socket.
 
 
-    addDevice(Name, Ip, Port) ->
+    add_device(Name, Ip, Port) ->
         Devices = persistent_term:get(devices),
         NewDevices = [{Name, Ip, Port} | Devices],
         persistent_term:put(devices, NewDevices).
