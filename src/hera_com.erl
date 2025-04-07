@@ -109,20 +109,9 @@ loop(Socket) ->
     
 
 handle_string_packet(String) ->
-    case string:tokens(String, ": ,") of 
-        ["Pos", Ids, Xs, Ys] ->
-            % Position string received from python server
-            Id = list_to_integer(Ids),
-            X = list_to_float(Xs),
-            Y = list_to_float(Ys) ,
-            SensorName = list_to_atom("sensor" ++ Ids),
-            hera_data:store(pos, SensorName, 0, [X, Y]),
-            hera_sub:notify({start_measure, Id}),
-            io:format("[HERA_COM] Received Pos ~p => {~p,~p}~n", [Id, X, Y]);
-        _ ->
-            io:format("[HERA_COM] Received unmatched string ~p~n",[String])
-    end.
-
+    Tokens = string:tokens(String, ": ,"),
+    io:format("[HERA_COM] Received  ~p~n", [String]),
+    hera_sub:notify(Tokens).
 
 %Encodes one value from a double to a half-float
 enc_hf(Double) ->
