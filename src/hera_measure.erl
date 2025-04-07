@@ -105,10 +105,10 @@ init_seq(Name) ->
 measure(State=#state{name=N, mod=M, mod_state=MS, seq=Seq, iter=Iter}) ->
     case M:measure(MS) of
         {undefined, NewMS} ->
-            io:format("[HERA_MEASURE] ~p", [NewMS]),
+            %io:format("[HERA_MEASURE] ~p~n", [NewMS]),
             State#state{mod_state=NewMS};
         {ok, Vals=[_|_], NewMS} ->
-            io:format("[HERA_MEASURE] ok, ~p", [Vals]),
+            %io:format("[HERA_MEASURE] ok, ~p~n", [Vals]),
             hera_com:send(N, Seq, Vals),
             NewIter = case Iter of
                 infinity -> Iter;

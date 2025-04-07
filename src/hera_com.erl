@@ -99,7 +99,7 @@ loop(Socket) ->
                 {hera_data, Name, From, Seq, Values} ->
                     hera_data:store(Name, From, Seq, Values)
             end;
-        {send_packet_unicast, Packet} ->
+        {send_packet, Packet} ->
             io:format("[HERA_COMM] sending ~p to ~p : ~p ~n", [Packet, ?MULTICAST_ADDR, ?MULTICAST_PORT]),
             gen_udp:send(Socket, ?MULTICAST_ADDR, ?MULTICAST_PORT, Packet);
         _ ->
