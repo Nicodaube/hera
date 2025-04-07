@@ -5,7 +5,7 @@
 -export([encode_half_float/1,decode_half_float/1]).
 -export([get_bits/1]).
 
--define(MULTICAST_ADDR, {172,20,10,15}).
+-define(MULTICAST_ADDR, {239,255,0,1}).
 -define(MULTICAST_PORT, 9000).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -93,6 +93,7 @@ open_socket() ->
 loop(Socket) ->
     receive
         {udp, _Sock, _IP, _InPortNo, Packet} ->
+            
             case catch binary_to_term(Packet) of
                 {'EXIT', _} ->
                     handle_string_packet(binary_to_list(Packet));
