@@ -1,7 +1,7 @@
 -module(hera_com).
 
 -export([start_link/0]).
--export([send/3, send_unicast/2, add_device/3]).
+-export([send/3, send_unicast/3, add_device/3]).
 -export([encode_half_float/1,decode_half_float/1]).
 -export([get_bits/1]).
 
@@ -32,8 +32,16 @@ send(Name, Seq, Values) ->
     end,
     ok.
 
-send_unicast(Name, Message) ->
-    try ?MODULE ! {send_packet_unicast, Name, term_to_binary(Message)}
+send_unicast(Name, Message, Type) ->
+    case Type of
+      "UTF8" ->
+        NewMessage = Message;
+      "Binary" ->
+        NewMessage = term_to_binary(Message);
+      _ ->
+        NewMessage = Message
+    end,
+    try ?MODULE ! {send_packet_unicast, Name, NewMessage}
     catch
         error:_ -> ok
     end,
