@@ -33,6 +33,7 @@ send(Name, Seq, Values) ->
     ok.
 
 send_unicast(Name, Message, Type) ->
+    io:format("[HERA_COMM] Trying to send ~p to ~p~n", [Message, Name]),
     NewMessage = case Type of
         "UTF8" -> Message;
         "Binary" -> term_to_binary(Message);
