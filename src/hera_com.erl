@@ -1,7 +1,7 @@
 -module(hera_com).
 
 -export([start_link/0]).
--export([send/3, send_unicast/3, add_device/3]).
+-export([send/3, send/4, send_unicast/3, add_device/3]).
 -export([encode_half_float/1,decode_half_float/1]).
 -export([get_bits/1]).
 
@@ -26,6 +26,15 @@ start_link() ->
 
 send(Name, Seq, Values) ->
     Message = {hera_data, Name, node(), Seq, Values},
+    try ?MODULE ! {send_packet, term_to_binary(Message)}
+    catch
+        error:_ -> ok
+    end,
+    ok.
+
+send(Name, Seq, From, Values) ->
+    % To use when wanting to use personalized naming
+    Message = {hera_data, Name, From, Seq, Values},
     try ?MODULE ! {send_packet, term_to_binary(Message)}
     catch
         error:_ -> ok
