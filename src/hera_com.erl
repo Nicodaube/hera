@@ -140,7 +140,7 @@ open_socket() ->
                     {'EXIT', _} ->
                         handle_string_packet(binary_to_list(Packet));
                     {hera_data, Name, From, Seq, Values} -> 
-                        io:format("[HERA_COM] received ~p from ~p~n", [Values, Name]),                       
+                        io:format("[HERA_COM] received ~p from ~p~n", [Values, From]),                       
                         hera_data:store(Name, From, Seq, Values)
                 end;
             {send_packet, Packet} ->
