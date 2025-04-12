@@ -33,7 +33,7 @@ send(Name, Seq, Values) ->
     ok.
 
 send_unicast(Name, Message, Type) ->
-    io:format("[HERA_COMM] Trying to send ~p to ~p~n", [Message, Name]),
+    io:format("[HERA_COM] Sending ~p to ~p~n", [Message, Name]),
     NewMessage = case Type of
         "UTF8" -> Message;
         "Binary" -> term_to_binary(Message);
@@ -84,8 +84,8 @@ open_socket(Delay) ->
     try open_socket()
     catch
         error:Reason ->
-            io:format("[HERA_COMM] Could not open socket:~p~n", [Reason]),
-            io:format("[HERA_COMM] Retrying in ~p [s]~n", [Delay]),
+            io:format("[HERA_COM] Could not open socket:~p~n", [Reason]),
+            io:format("[HERA_COM] Retrying in ~p [s]~n", [Delay]),
             timer:sleep(Delay*1000),
             open_socket(min(2*Delay, 8))
     end.
@@ -138,10 +138,10 @@ open_socket() ->
                 Multicast_enabled = persistent_term:get(multicast),
                 if 
                     Multicast_enabled ->
-                        io:format("[HERA_COM] broadcasting ~p on Port: ~p ~n", [Packet, ?PORT]),
+                        %io:format("[HERA_COM] broadcasting ~p on Port: ~p ~n", [Packet, ?PORT]),
                         gen_udp:send(Socket, ?MULTICAST_ADDR, ?PORT, Packet);
                     true ->
-                        io:format("[HERA_COM] unicasting ~p to all known devices ~n", [Packet]),
+                        %io:format("[HERA_COM] unicasting ~p to all known devices ~n", [Packet]),
                         [gen_udp:send(Socket, IP, Port, Packet) || {_, IP, Port} <- persistent_term:get(devices)]
                 end;
             {send_packet_unicast, Name, Packet} ->
