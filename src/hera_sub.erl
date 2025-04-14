@@ -13,7 +13,7 @@ subscribe(Pid) ->
     gen_server:call(?MODULE, {subscribe, Pid}).
 
 notify(Msg) ->
-    io:format("[HERA_SUB] Notifying ~p~n",[Msg]),
+    %io:format("[HERA_SUB] Notifying ~p~n",[Msg]),
     gen_server:cast(?MODULE, {notify, Msg}).
 
 init([]) ->
