@@ -128,49 +128,49 @@ open_socket() ->
     Socket.
 
 
-    add_device(Name, Ip, Port) ->
-        Devices = persistent_term:get(devices),
-        NewDevices = [{Name, Ip, Port} | Devices],
-        persistent_term:put(devices, NewDevices).
+add_device(Name, Ip, Port) ->
+    Devices = persistent_term:get(devices),
+    NewDevices = [{Name, Ip, Port} | Devices],
+    persistent_term:put(devices, NewDevices).
 
 
-    loop(Socket) ->
-        receive
-            {udp, _Sock, _IP, _InPortNo, Packet} ->
-                case catch binary_to_term(Packet) of
-                    {'EXIT', _} ->
-                        handle_string_packet(binary_to_list(Packet));
-                    {hera_data, Name, From, Seq, Values} -> 
-                        io:format("[HERA_COM] received ~p from ~p~n", [Values, From]),                       
-                        hera_data:store(Name, From, Seq, Values)
-                end;
-            {send_packet, Packet} ->
-                Multicast_enabled = persistent_term:get(multicast),
-                if 
-                    Multicast_enabled ->
-                        %io:format("[HERA_COM] broadcasting ~p on Port: ~p ~n", [Packet, ?PORT]),
-                        gen_udp:send(Socket, ?MULTICAST_ADDR, ?PORT, Packet);
-                    true ->
-                        %io:format("[HERA_COM] unicasting ~p to all known devices ~n", [Packet]),
-                        [gen_udp:send(Socket, IP, Port, Packet) || {_, IP, Port} <- persistent_term:get(devices)]
-                end;
-            {send_packet_unicast, Name, Packet} ->
-                Devices = persistent_term:get(devices),
-                SelectedDevice = lists:keyfind(Name, 1, Devices),
-                case SelectedDevice of
-                  false -> io:format("[HERA_COM] Unregistered Device : ~p~n", [Name]);
-                  {_, IP, Port} -> gen_udp:send(Socket, IP, Port, Packet)
-                end;             
-                
-            _ ->
-                ok
-        end,
-        loop(Socket).
+loop(Socket) ->
+    receive
+        {udp, _Sock, _IP, _InPortNo, Packet} ->
+            case catch binary_to_term(Packet) of
+                {'EXIT', _} ->
+                    handle_string_packet(binary_to_list(Packet));
+                {hera_data, Name, From, Seq, Values} -> 
+                    %io:format("[HERA_COM] received ~p from ~p~n", [Values, From]),                       
+                    hera_data:store(Name, From, Seq, Values)
+            end;
+        {send_packet, Packet} ->
+            Multicast_enabled = persistent_term:get(multicast),
+            if 
+                Multicast_enabled ->
+                    %io:format("[HERA_COM] broadcasting ~p on Port: ~p ~n", [Packet, ?PORT]),
+                    gen_udp:send(Socket, ?MULTICAST_ADDR, ?PORT, Packet);
+                true ->
+                    %io:format("[HERA_COM] unicasting ~p to all known devices ~n", [Packet]),
+                    [gen_udp:send(Socket, IP, Port, Packet) || {_, IP, Port} <- persistent_term:get(devices)]
+            end;
+        {send_packet_unicast, Name, Packet} ->
+            Devices = persistent_term:get(devices),
+            SelectedDevice = lists:keyfind(Name, 1, Devices),
+            case SelectedDevice of
+                false -> io:format("[HERA_COM] Unregistered Device : ~p~n", [Name]);
+                {_, IP, Port} -> gen_udp:send(Socket, IP, Port, Packet)
+            end;             
+            
+        _ ->
+            ok
+    end,
+    loop(Socket).
     
 
 handle_string_packet(String) ->
     Tokens = string:tokens(String, ": ,"),
-    io:format("[HERA_COM] Received  ~p~n", [String]),
+    %io:format("[HERA_COM] Received  ~p~n", [String]),
     hera_sub:notify(Tokens).
 
 %Encodes one value from a double to a half-float
