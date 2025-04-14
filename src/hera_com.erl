@@ -124,6 +124,7 @@ open_socket() ->
             persistent_term:put(multicast, false),
             persistent_term:put(devices, [])
     end,
+    hera_sub:notify("connected"),
     Socket.
 
 
