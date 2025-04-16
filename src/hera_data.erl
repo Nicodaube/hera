@@ -109,9 +109,9 @@ handle_cast({store, Name, Node, Seq1, L}, MapData) ->
     end,
     {noreply, maps:put(Name, MapNode2, MapData)};
 
-handle_cast({reset}, _) ->
+handle_cast(reset, _) ->
     NewState = #{},
-    {noreply, NewState}.
+    {noreply, NewState};
 
 handle_cast(_Request, State) ->
     {noreply, State}.
