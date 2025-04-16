@@ -4,7 +4,7 @@
 
 -export([start_link/0]).
 -export([get/1, get/2]).
--export([store/4]).
+-export([store/4, reset/0]).
 -export([init/1, handle_call/3, handle_cast/2]).
 
 -type measure() :: {node(), pos_integer(), hera:timestamp(), [number(), ...]}.
@@ -52,6 +52,9 @@ get(Name, Node) ->
 store(Name, Node, Seq, Values) ->
     io:format("[HERA_DATA] Storing ~p, ~p, ~p, ~p~n",[Name, Node, Seq, Values]),
     gen_server:cast(?MODULE, {store, Name, Node, Seq, Values}).
+
+reset() ->
+    gen_server:cast(?MODULE, reset).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Callbacks
@@ -105,6 +108,10 @@ handle_cast({store, Name, Node, Seq1, L}, MapData) ->
             MapNode1
     end,
     {noreply, maps:put(Name, MapNode2, MapData)};
+
+handle_cast({reset}, _) ->
+    NewState = #{},
+    {noreply, NewState}.
 
 handle_cast(_Request, State) ->
     {noreply, State}.
