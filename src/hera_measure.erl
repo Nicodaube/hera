@@ -46,22 +46,27 @@ start_link(Module, Args) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 init({Mod, Args}) ->
-    {ok, ModState, Spec} = Mod:init(Args),
-    L0 = ?record_to_tuplelist(state, #state{}),
-    L1 = lists:map(fun({Key, Val}) -> maps:get(Key, Spec, Val) end, L0),
-    State = list_to_tuple([state|L1]),
-    Seq = init_seq(State#state.name),
-    case State#state.sync of
-        true ->
-            PidRef = subscribe(State#state.name),
-            NewState =
-                State#state{seq=Seq,mod=Mod,mod_state=ModState,monitor=PidRef},
-            loop(NewState, true);
-        false ->
-            NewState = State#state{seq=Seq,mod=Mod,mod_state=ModState},
-            loop(NewState, false)
-    end.
-
+    case Mod:init(Args) of
+        {ok, ModState, Spec} ->
+            L0 = ?record_to_tuplelist(state, #state{}),
+            L1 = lists:map(fun({Key, Val}) -> maps:get(Key, Spec, Val) end, L0),
+            State = list_to_tuple([state|L1]),
+            Seq = init_seq(State#state.name),
+            case State#state.sync of
+                true ->
+                    PidRef = subscribe(State#state.name),
+                    NewState =
+                        State#state{seq=Seq,mod=Mod,mod_state=ModState,monitor=PidRef},
+                    loop(NewState, true);
+                false ->
+                    NewState = State#state{seq=Seq,mod=Mod,mod_state=ModState},
+                    loop(NewState, false)
+            end;
+        {stop, Reason} ->
+            io:format("[HERA_MEASURE] Measure module stopped, Reason :~p~n", [Reason]),
+            {stop, normal}
+    end.  
+    
 
 loop(State, false) ->
     continue(measure(State));
