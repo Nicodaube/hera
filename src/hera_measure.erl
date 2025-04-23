@@ -63,7 +63,7 @@ init({Mod, Args}) ->
                     loop(NewState, false)
             end;
         {stop, Reason} ->
-            io:format("[HERA_MEASURE] Measure module stopped, Reason :~p~n", [Reason]),
+            io:format("[HERA_MEASURE] Measure not initialized because: ~p~n", [Reason]),
             {stop, normal}
     end.  
     
@@ -121,11 +121,14 @@ measure(State=#state{name=N, mod=M, mod_state=MS, seq=Seq, iter=Iter}) ->
             end,
             State#state{seq=Seq+1, iter=NewIter, mod_state=NewMS};
         {ok, Vals=[_|_], Name, From, NewMS} ->
-                %io:format("[HERA_MEASURE] ok, ~p~n", [Vals]),
-                hera_com:send(Name, Seq, From, Vals),
-                NewIter = case Iter of
-                    infinity -> Iter;
-                    _ -> Iter-1
-                end,
-                State#state{seq=Seq+1, iter=NewIter, mod_state=NewMS}
+            %io:format("[HERA_MEASURE] ok, ~p~n", [Vals]),
+            hera_com:send(Name, Seq, From, Vals),
+            NewIter = case Iter of
+                infinity -> Iter;
+                _ -> Iter-1
+            end,
+            State#state{seq=Seq+1, iter=NewIter, mod_state=NewMS};
+        {stop, Reason} ->
+            io:format("[HERA_MEASURE] Stoping because : ~p~n",[Reason]),
+            State#state{seq=Seq+1, iter=0, mod_state=MS}
     end.
