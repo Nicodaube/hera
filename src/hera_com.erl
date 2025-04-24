@@ -124,7 +124,7 @@ open_socket() ->
             persistent_term:put(multicast, false),
             persistent_term:put(devices, [])
     end,
-    hera_sub:notify("connected"),
+    hera_subscribe:notify("connected"),
     Socket.
 
 
@@ -171,7 +171,7 @@ loop(Socket) ->
 handle_string_packet(String) ->
     Tokens = string:tokens(String, ": ,"),
     %io:format("[HERA_COM] Received  ~p~n", [String]),
-    hera_sub:notify(Tokens).
+    hera_subscribe:notify(Tokens).
 
 %Encodes one value from a double to a half-float
 enc_hf(Double) ->
