@@ -50,7 +50,7 @@ get(Name, Node) ->
     Values :: [number(), ...].
 
 store(Name, Node, Seq, Values) ->
-    %io:format("[HERA_DATA] Storing ~p, ~p, ~p, ~p~n",[Name, Node, Seq, Values]),
+    io:format("[HERA_DATA] Storing ~p, ~p, ~p, ~p~n",[Name, Node, Seq, Values]),
     gen_server:cast(?MODULE, {store, Name, Node, Seq, Values}).
 
 reset() ->
