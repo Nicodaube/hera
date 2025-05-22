@@ -34,7 +34,6 @@ send(Name, Seq, Values) ->
 
 send(Name, Seq, From, Values) ->
     % To use when wanting to use personalized naming
-    io:format("[HERA_COM] Sending ~p Seq ~p : ~p~n", [Name, Seq, Values]),
     Message = {hera_data, Name, From, Seq, Values},
     try ?MODULE ! {send_packet, term_to_binary(Message)}
     catch
@@ -144,7 +143,7 @@ loop(Socket) ->
                 {'EXIT', _} ->
                     handle_string_packet(binary_to_list(Packet));
                 {hera_data, Name, From, Seq, Values} -> 
-                    io:format("[HERA_COM] Received from ~p: ~p ~p ~p~n", [From, Name, Seq, Values]),                      
+                    %io:format("[HERA_COM] Received from ~p: ~p ~p ~p~n", [From, Name, Seq, Values]),                      
                     hera_data:store(Name, From, Seq, Values)
             end;
         {send_packet, Packet} ->
