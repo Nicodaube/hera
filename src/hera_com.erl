@@ -34,6 +34,7 @@ send(Name, Seq, Values) ->
 
 send(Name, Seq, From, Values) ->
     % To use when wanting to use personalized naming
+    io:format("[HERA_COM] Sending ~p Seq ~p : ~p~n", [Name, Seq, Values]),
     Message = {hera_data, Name, From, Seq, Values},
     try ?MODULE ! {send_packet, term_to_binary(Message)}
     catch
