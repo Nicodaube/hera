@@ -1,7 +1,7 @@
 -module(hera_com).
 
 -export([start_link/0]).
--export([send/3, send/4, send_unicast/3, add_device/3]).
+-export([send/3, send/4, send_unicast/3, add_device/3, reset_devices/0]).
 -export([encode_half_float/1,decode_half_float/1]).
 -export([get_bits/1]).
 
