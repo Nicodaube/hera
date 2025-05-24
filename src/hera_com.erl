@@ -132,8 +132,13 @@ open_socket() ->
 
 add_device(Name, Ip, Port) ->
     Devices = persistent_term:get(devices),
-    NewDevices = [{Name, Ip, Port} | Devices],
-    persistent_term:put(devices, NewDevices).
+    case lists:member(Name, Devices) of
+        false ->
+            NewDevices = [{Name, Ip, Port} | Devices],
+            persistent_term:put(devices, NewDevices);
+        _ ->
+            ok
+    end.
 
 
 loop(Socket) ->
