@@ -132,7 +132,7 @@ open_socket() ->
 
 add_device(Name, Ip, Port) ->
     Devices = persistent_term:get(devices),
-    case lists:member(Name, Devices) of
+    case lists:member({Name, Ip, Port}, Devices) of
         false ->
             io:format("[HERA_COM] Discovered new device : ~p~n", [Name]),
             NewDevices = [{Name, Ip, Port} | Devices],
