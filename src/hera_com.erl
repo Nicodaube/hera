@@ -134,6 +134,7 @@ add_device(Name, Ip, Port) ->
     Devices = persistent_term:get(devices),
     case lists:member(Name, Devices) of
         false ->
+            io:format("[HERA_COM] Discovered new device : ~p~n", [Name]),
             NewDevices = [{Name, Ip, Port} | Devices],
             persistent_term:put(devices, NewDevices);
         _ ->
