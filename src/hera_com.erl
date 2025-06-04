@@ -96,11 +96,13 @@ open_socket(Delay, Attempts) ->
     catch
         error:Reason ->
             io:format("[HERA_COM] Could not open socket:~p~n", [Reason]),
-            io:format("[HERA_COM] Retrying in ~p [s]~n", [Delay]),
+            io:format("[HERA_COM] Retrying in ~p [s], attempt number ~p~n", [Delay, Attempts]),
             timer:sleep(Delay*1000),
             if 
                 Attempts > 6 ->
-                    hera_network:next_network()
+                    hera_network:next_network();
+                true ->
+                    ok
             end,
             open_socket(min(2*Delay, 8), Attempts+1)
     end.
