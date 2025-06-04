@@ -64,10 +64,10 @@ modify_supplicant(Ssid, Pskey) ->
     case file:write_file(?SUPPLICANT_PATH, NewContent) of
         ok ->
             io:format("[HERA_NETWORK] Successfully modified wpa_supplicant.conf~n"),
-            os:cmd("killall wpa_supplicant 2>/dev/null"),
-            os:cmd("wpa_supplicant -B -i wlan0 -c " ++ ?SUPPLICANT_PATH),
-            os:cmd("killall udhcpc 2>/dev/null"),
-            os:cmd("udhcpc -i wlan0 -q -n"),
+            catch os:cmd("sh -c \"killall wpa_supplicant 2>/dev/null\""),
+            catch os:cmd("sh -c \"wpa_supplicant -B -i wlan0 -c " ++ ?SUPPLICANT_PATH ++ "\""),
+            catch os:cmd("sh -c \"killall udhcpc 2>/dev/null\""),
+            catch os:cmd("sh -c \"udhcpc -i wlan0 -q -n\""),
             ok;
         {error, Reason} ->
             io:format("[] Error writing wpa_supplicant.conf: ~p~n", [Reason]),
