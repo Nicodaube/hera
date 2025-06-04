@@ -39,5 +39,9 @@ init([]) ->
     id => hera_subscribe,
     start => {hera_subscribe, start_link, []}
     },
-    ChildSpecs = [HeraData, HeraSub, HeraCom, HeraMeasureSup],
+    HeraNet = #{
+    id => hera_network,
+    start => {hera_network, start_link, []}
+    },
+    ChildSpecs = [HeraData, HeraSub, HeraCom, HeraNet, HeraMeasureSup],
     {ok, {SupFlags, ChildSpecs}}.

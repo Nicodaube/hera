@@ -87,18 +87,22 @@ reset_devices() ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 init() ->
-    Socket = open_socket(1),
+    Socket = open_socket(1, 1),
     loop(Socket).
 
 
-open_socket(Delay) ->
+open_socket(Delay, Attempts) ->
     try open_socket()
     catch
         error:Reason ->
             io:format("[HERA_COM] Could not open socket:~p~n", [Reason]),
             io:format("[HERA_COM] Retrying in ~p [s]~n", [Delay]),
             timer:sleep(Delay*1000),
-            open_socket(min(2*Delay, 8))
+            if 
+                Attempts > 6 ->
+                    hera_network:next_network()
+            end,
+            open_socket(min(2*Delay, 8), Attempts+1)
     end.
 
 
