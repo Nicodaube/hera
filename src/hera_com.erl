@@ -119,9 +119,11 @@ open_socket() ->
     case Ipaddr of
         {192, _, _, _} ->
             io:format("[HERA_COM] Connected to private multicast enabled network with IP: ~p~n", [Ipaddr]),
+            persistent_term:put(devices, []),
             persistent_term:put(multicast, true);
         {10, _, _, _} ->
             io:format("[HERA_COM] Connected to private multicast enabled network with IP: ~p~n", [Ipaddr]),
+            persistent_term:put(devices, []),
             persistent_term:put(multicast, true);
         {172, _, _, _} ->
             io:format("[HERA_COM] Connected to hotspot (unicast only) IP: ~p~n", [Ipaddr]),
