@@ -60,17 +60,17 @@ parse_info(Line) when is_list(Line) ->
     end.
 
 modify_supplicant(Ssid, Pskey) ->
-    NewContent = "network={\n" ++ "\tssid=\"" ++ Ssid ++ "\"\n" ++ "\tkey_mgmt=WPA-PSK\n" ++ "\tpsk=\"" ++ Pskey ++ "\"\n" ++"}\n",
+    NewContent = "network={\n" ++ "\s\s\s\sssid=\"" ++ Ssid ++ "\"\n" ++ "\s\s\s\skey_mgmt=WPA-PSK\n" ++ "\s\s\s\spsk=\"" ++ Pskey ++ "\"\n" ++"}\n",
     case file:write_file(?SUPPLICANT_PATH, NewContent) of
         ok ->
-            io:format("[HERA_NETWORK] Successfully modified wpa_supplicant.conf~n"),
-            catch os:cmd("sh -c \"killall wpa_supplicant 2>/dev/null\""),
-            catch os:cmd("sh -c \"wpa_supplicant -B -i wlan0 -c " ++ ?SUPPLICANT_PATH ++ "\""),
-            catch os:cmd("sh -c \"killall udhcpc 2>/dev/null\""),
-            catch os:cmd("sh -c \"udhcpc -i wlan0 -q -n\""),
-            ok;
+            case hera_network_nif:restart_wifi() of
+                ok ->
+                    ok;
+                {error, Reason} ->
+                    io:format("[HERA_NETWORK] Error while restarting wifi : ~p~n", [Reason])
+            end;
         {error, Reason} ->
-            io:format("[] Error writing wpa_supplicant.conf: ~p~n", [Reason]),
+            io:format("[HERA_NETWORK] Error writing wpa_supplicant.conf: ~p~n", [Reason]),
             error
     end.
 
