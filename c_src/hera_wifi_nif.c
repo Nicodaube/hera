@@ -1,6 +1,6 @@
 #include <erl_nif.h>
-#include <grisp/init.h>   // for grisp_init_wpa_supplicant/3
-#include <wlan.h>   // for PRIO_WPA, PRIO_DHCP, create_wlandev
+#include <grisp/init.h>
+#include <wlan.h>
 
 static ERL_NIF_TERM
 restart_wifi_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
