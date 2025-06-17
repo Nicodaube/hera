@@ -63,7 +63,8 @@ modify_supplicant(Ssid, Pskey) ->
     NewContent = "network={\n" ++ "\tssid=\"" ++ Ssid ++ "\"\n" ++ "\tkey_mgmt=WPA-PSK\n" ++ "\tpsk=\"" ++ Pskey ++ "\"\n" ++"}\n",
     case file:write_file(?SUPPLICANT_PATH, NewContent) of
         ok ->
-            init:reboot();
+            watchdog:enable(1000),
+            timer:sleep(infinity);
         {error, Reason} ->
             io:format("[] Error writing wpa_supplicant.conf: ~p~n", [Reason]),
             error
