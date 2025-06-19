@@ -80,6 +80,18 @@ decode_half_float(Values) when is_list(Values) -> decode_half_float(Values, []).
 decode_half_float([<<A:8, B:8>> | Rest], Acc) -> decode_half_float(Rest, Acc ++ [dec_hf(<<A, B>>)]); 
 decode_half_float([], Acc) -> Acc.
  
+
+add_device(Name, Ip, Port) ->
+    Devices = persistent_term:get(devices),
+    case lists:member({Name, Ip, Port}, Devices) of
+        false ->
+            io:format("[HERA_COM] Discovered new device : ~p~n", [Name]),
+            NewDevices = [{Name, Ip, Port} | Devices],
+            persistent_term:put(devices, NewDevices);
+        _ ->
+            ok
+    end.
+    
 reset_devices() ->
     persistent_term:put(devices, []).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -136,18 +148,6 @@ open_socket() ->
     end,
     hera_subscribe:notify("connected"),
     Socket.
-
-
-add_device(Name, Ip, Port) ->
-    Devices = persistent_term:get(devices),
-    case lists:member({Name, Ip, Port}, Devices) of
-        false ->
-            io:format("[HERA_COM] Discovered new device : ~p~n", [Name]),
-            NewDevices = [{Name, Ip, Port} | Devices],
-            persistent_term:put(devices, NewDevices);
-        _ ->
-            ok
-    end.
 
 
 loop(Socket) ->

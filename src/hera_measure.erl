@@ -63,8 +63,7 @@ init({Mod, Args}) ->
                     loop(NewState, false)
             end;
         {stop, Reason} ->
-            io:format("[HERA_MEASURE] Measure not initialized because: ~p~n", [Reason]),
-            {stop, normal}
+            io:format("[HERA_MEASURE] Measure not initialized because: ~p~n", [Reason])
     end.  
     
 
