@@ -33,6 +33,7 @@ timestamp() ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 start(_StartType, _StartArgs) ->
+    numerl:init(),
     hera_sup:start_link().
 
 
