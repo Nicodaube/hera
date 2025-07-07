@@ -3,10 +3,6 @@
 -export([kf_predict/3, kf_update/4]).
 -export([kf/6, ekf/6, ekf_control/7]).
 
-%% see https://en.wikipedia.org/wiki/Kalman_filter
-
-
-%% A kalman filter without control input
 kf({X0, P0}, F, H, Q, R, Z) ->  
     {Xp, Pp} = kf_predict({X0, P0}, F, Q),
     kf_update({Xp, Pp}, H, R, Z).
@@ -28,7 +24,6 @@ kf_update({Xp, Pp}, H, R, Z) ->
     {X1, P1}.
 
 
-%% An extended kalman filter without control input, [X0, P0, Q, R, Z] must be mat matrices, [F, Jf, H, Jh] must be functions
 ekf({X0, P0}, {F, Jf}, {H, Jh}, Q, R, Z) ->
     % Prediction
     Xp = F(X0),
@@ -45,7 +40,6 @@ ekf({X0, P0}, {F, Jf}, {H, Jh}, Q, R, Z) ->
     P1 = mat:'-'(Pp, mat:eval([K, '*', Jhx, '*', Pp])),
     {X1, P1}.
 
-%% Same function as ekf/ with command input
 ekf_control({X0, P0}, {F, Jf}, {H, Jh}, Q, R, Z, U) -> 
     % Prediction
     Xp = F(X0,U),
