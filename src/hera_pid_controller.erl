@@ -1,4 +1,4 @@
--module(pid_controller).
+-module(hera_pid_controller).
 
 -export([pid_init/4, pid_init/6]).
 -export([saturation/2, sign/1]).
