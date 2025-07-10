@@ -21,7 +21,7 @@ pid_interface({Kp, Ki, Kd, Limit, Int_limit}, {Set_point, Current_input}, {Prev_
 	receive
 		%Exit process
 		{_, {exit}} ->
-			io:format("closed~n");
+      hera:logg("[HERA_PID] Exiting~n", []);
 
 		%Parameter modification 
 		{_, {kp, New_Kp}} ->

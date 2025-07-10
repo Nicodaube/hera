@@ -43,7 +43,7 @@ send(Name, Seq, From, Values) ->
     ok.
 
 send_unicast(Name, Message, Type) ->
-    io:format("[HERA_COM] Sending ~p to ~p~n", [Message, Name]),
+    hera:logg("[HERA_COM] Sending ~p to ~p~n", [Message, Name]),
     NewMessage = case Type of
         "UTF8" -> Message;
         "Binary" -> term_to_binary(Message);
@@ -86,7 +86,7 @@ add_device(Name, Ip, Port) ->
     Devices = persistent_term:get(devices),
     case lists:member({Name, Ip, Port}, Devices) of
         false ->
-            io:format("[HERA_COM] Discovered new device : ~p~n", [Name]),
+            hera:logg("[HERA_COM] Discovered new device : ~p~n", [Name]),
             NewDevices = [{Name, Ip, Port} | Devices],
             persistent_term:put(devices, NewDevices);
         _ ->
@@ -108,8 +108,8 @@ open_socket(Delay, Attempts) ->
     try open_socket()
     catch
         error:Reason ->
-            io:format("[HERA_COM] Could not open socket:~p~n", [Reason]),
-            io:format("[HERA_COM] Retrying in ~p [s], attempt number ~p~n", [Delay, Attempts]),
+            hera:logg("[HERA_COM] Could not open socket: ~p~n", [Reason]),
+            hera:logg("[HERA_COM] Retrying in ~p [s], attempt number ~p~n", [Delay, Attempts]),
             timer:sleep(Delay*1000),
             open_socket(min(2*Delay, 8), Attempts+1)
     end.
@@ -125,16 +125,16 @@ open_socket() ->
 
     case Ipaddr of
         {192, _, _, _} ->
-            io:format("[HERA_COM] Connected to private network with IP: ~p~n", [Ipaddr]),            
+            hera:logg("[HERA_COM] Connected to private network with IP: ~p~n", [Ipaddr]),       
             persistent_term:put(multicast, false);
         {10, _, _, _} ->
-            io:format("[HERA_COM] Connected to private network with IP: ~p~n", [Ipaddr]),
+            hera:logg("[HERA_COM] Connected to private network with IP: ~p~n", [Ipaddr]),
             persistent_term:put(multicast, false);
         {172, _, _, _} ->
-            io:format("[HERA_COM] Connected to mobile hotspot (unicast only) IP: ~p~n", [Ipaddr]),
+            hera:logg("[HERA_COM] Connected to mobile hotspot (unicast only) IP: ~p~n", [Ipaddr]),
             persistent_term:put(multicast, false);
         _ ->
-            io:format("[HERA_COM] Unknown network IP: ~p~n", [Ipaddr]),
+            hera:logg("[HERA_COM] Unknown network IP: ~p~n", [Ipaddr]),
             persistent_term:put(multicast, false)
     end,
     hera_subscribe:notify("connected"),
@@ -146,25 +146,22 @@ loop(Socket) ->
             case catch binary_to_term(Packet) of
                 {'EXIT', _} ->
                     handle_string_packet(binary_to_list(Packet));
-                {hera_data, Name, From, Seq, Values} -> 
-                    %io:format("[HERA_COM] Received from ~p: ~p ~p ~p~n", [From, Name, Seq, Values]),                      
+                {hera_data, Name, From, Seq, Values} ->                     
                     hera_data:store(Name, From, Seq, Values)
             end;
         {send_packet, Packet} ->
             Multicast_enabled = persistent_term:get(multicast),
             if 
                 Multicast_enabled ->
-                    %io:format("[HERA_COM] broadcasting ~p on Port: ~p ~n", [Packet, ?PORT]),
                     gen_udp:send(Socket, ?MULTICAST_ADDR, ?PORT, Packet);
                 true ->
-                    %io:format("[HERA_COM] unicasting ~p to all known devices ~n", [Packet]),
                     [gen_udp:send(Socket, IP, Port, Packet) || {_, IP, Port} <- persistent_term:get(devices)]
             end;
         {send_packet_unicast, Name, Packet} ->
             Devices = persistent_term:get(devices),
             SelectedDevice = lists:keyfind(Name, 1, Devices),
             case SelectedDevice of
-                false -> io:format("[HERA_COM] Unregistered Device : ~p~n", [Name]);
+                false -> hera:logg("[HERA_COM] Unregistered Device : ~p~n", [Name]);
                 {_, IP, Port} -> gen_udp:send(Socket, IP, Port, Packet)
             end;             
             
@@ -196,14 +193,13 @@ test_connection() ->
                     
     
 restart(Socket) ->
-    io:format("[HERA_COM] Lost connection~n"),
+    hera:logg("[HERA_COM] Lost connection~n", []),
     gen_udp:close(Socket),
     hera_subscribe:notify("disconnected"),
     open_socket(1, 1).  
 
 handle_string_packet(String) ->
     Tokens = string:tokens(String, ": ,"),
-    %io:format("[HERA_COM] Received  ~p~n", [String]),
     hera_subscribe:notify(Tokens).
 
 %Encodes one value from a double to a half-float
@@ -226,7 +222,4 @@ dec_hf(Half_Float) ->
 	B = ((X bsl 2) band 252) bor ((Y bsr 6) band 3),
 	C = ((Y bsl 2) band 252),
 	binary_to_term(<<131,70,A,B,C,0,0,0,0,0>>).
-
-
-
 

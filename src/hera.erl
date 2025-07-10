@@ -2,7 +2,7 @@
 
 -behaviour(application).
 
--export([start_measure/2, timestamp/0]).
+-export([start_measure/2, timestamp/0, logg/2]).
 -export([start/2, stop/1]).
 
 -type timestamp() :: integer() | undefined.
@@ -28,13 +28,32 @@ start_measure(Module, Args) ->
 timestamp() ->
   erlang:monotonic_time(millisecond).
 
+logg(Message, Args) ->
+    DebugMode = persistent_term:get(debugMode),
+    if
+        DebugMode ->
+            io:format(Message, Args);
+        true ->
+            ok
+    end.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Callbacks
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 start(_StartType, _StartArgs) ->
+    io:format("[HERA] Startup~n"),
+    Args = application:get_env(hera, startup_args, [false]),
+    io:format("~p", [Args]),
+    case Args of 
+        [true] ->
+            persistent_term:put(debugMode, true),
+            hera:logg("[HERA] DebugMode on~n", []);
+        _ ->
+            persistent_term:put(debugMode, false),
+            ok
+    end,    
     hera_sup:start_link().
-
 
 stop(_State) ->
     ok.
