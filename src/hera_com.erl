@@ -125,13 +125,13 @@ open_socket() ->
 
     case Ipaddr of
         {192, _, _, _} ->
-            io:format("[HERA_COM] Connected to private multicast enabled network with IP: ~p~n", [Ipaddr]),            
+            io:format("[HERA_COM] Connected to private network with IP: ~p~n", [Ipaddr]),            
             persistent_term:put(multicast, false);
         {10, _, _, _} ->
-            io:format("[HERA_COM] Connected to private multicast enabled network with IP: ~p~n", [Ipaddr]),
+            io:format("[HERA_COM] Connected to private network with IP: ~p~n", [Ipaddr]),
             persistent_term:put(multicast, false);
         {172, _, _, _} ->
-            io:format("[HERA_COM] Connected to hotspot (unicast only) IP: ~p~n", [Ipaddr]),
+            io:format("[HERA_COM] Connected to mobile hotspot (unicast only) IP: ~p~n", [Ipaddr]),
             persistent_term:put(multicast, false);
         _ ->
             io:format("[HERA_COM] Unknown network IP: ~p~n", [Ipaddr]),
@@ -139,7 +139,6 @@ open_socket() ->
     end,
     hera_subscribe:notify("connected"),
     Socket.
-
 
 loop(Socket) ->
     receive
@@ -171,9 +170,36 @@ loop(Socket) ->
             
         _ ->
             ok
-    end,
-    loop(Socket).
+    after 5000 ->
+        case test_connection() of
+            ok ->
+                loop(Socket);
+            error ->
+                New_Socket = restart(Socket),
+                loop(New_Socket)
+        end
+    end.
     
+test_connection() ->
+    {ok, Addrs} = inet:getifaddrs(),
+    case lists:keyfind("wlan0", 1, Addrs) of
+        {"wlan0", Fields} ->
+            case proplists:get_value(broadaddr, Fields, none) of
+                none ->
+                    error;
+                _BroadAddr ->
+                    ok             
+            end;
+        _ ->
+            error
+    end.
+                    
+    
+restart(Socket) ->
+    io:format("[HERA_COM] Lost connection~n"),
+    gen_udp:close(Socket),
+    hera_subscribe:notify("disconnected"),
+    open_socket(1, 1).  
 
 handle_string_packet(String) ->
     Tokens = string:tokens(String, ": ,"),
@@ -200,7 +226,6 @@ dec_hf(Half_Float) ->
 	B = ((X bsl 2) band 252) bor ((Y bsr 6) band 3),
 	C = ((Y bsl 2) band 252),
 	binary_to_term(<<131,70,A,B,C,0,0,0,0,0>>).
-
 
 
 
