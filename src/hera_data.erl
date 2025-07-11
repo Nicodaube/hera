@@ -127,6 +127,7 @@ file_name(Name, Node) ->
 
 log_data(_, _, false) ->
     ok;
+
 log_data(File, {Seq, T, Ms}, true) ->
     Vals = lists:map(fun(V) -> lists:flatten(io_lib:format("~p", [V])) end, Ms),
     S = string:join(Vals, ","),
