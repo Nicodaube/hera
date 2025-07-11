@@ -1,24 +1,24 @@
--module(kalman).
+-module(hera_kalman).
 
--export([kf_predict/3, kf_update/4]).
--export([kf/6, ekf/6, ekf_control/7]).
+-export([predict/3, update/4]).
+-export([filter/6, extended_filter/6, extended_control/7]).
 
 %% see https://en.wikipedia.org/wiki/Kalman_filter
 
 
 %% A kalman filter without control input
-kf({X0, P0}, F, H, Q, R, Z) ->  
-    {Xp, Pp} = kf_predict({X0, P0}, F, Q),
-    kf_update({Xp, Pp}, H, R, Z).
+filter({X0, P0}, F, H, Q, R, Z) ->  
+    {Xp, Pp} = predict({X0, P0}, F, Q),
+    update({Xp, Pp}, H, R, Z).
 
 
-kf_predict({X0, P0}, F, Q) ->
+predict({X0, P0}, F, Q) ->
     Xp = mat:'*'(F, X0), 
     Pp = mat:eval([F, '*', P0, '*´', F, '+', Q]),
     {Xp, Pp}.
 
 
-kf_update({Xp, Pp}, H, R, Z) ->
+update({Xp, Pp}, H, R, Z) ->
     S = mat:eval([H, '*', Pp, '*´', H, '+', R]), 
     Sinv = mat:inv(S), 
     K = mat:eval([Pp, '*´', H, '*', Sinv]),
@@ -29,13 +29,20 @@ kf_update({Xp, Pp}, H, R, Z) ->
 
 
 %% An extended kalman filter without control input, [X0, P0, Q, R, Z] must be mat matrices, [F, Jf, H, Jh] must be functions
-ekf({X0, P0}, {F, Jf}, {H, Jh}, Q, R, Z) ->
+extended_filter({X0, P0}, {F, Jf}, {H, Jh}, Q, R, Z) ->
     % Prediction
+    {Xp, Pp} = extended_predict({X0, P0}, {F, Jf}, Q),
+
+    % Update
+    extended_update({Xp, Pp}, {H, Jh}, R, Z).
+
+extended_predict({X0, P0}, {F, Jf}, Q) ->
     Xp = F(X0),
     Jfx = Jf(X0),
     Pp = mat:eval([Jfx, '*', P0, '*´', Jfx, '+', Q]),
+    {Xp, Pp}.
 
-    % Update
+extended_update({Xp, Pp}, {H, Jh}, R, Z) ->
     Jhx = Jh(Xp),
     S = mat:eval([Jhx, '*', Pp, '*´', Jhx, '+', R]),
     Sinv = mat:inv(S),
@@ -46,7 +53,7 @@ ekf({X0, P0}, {F, Jf}, {H, Jh}, Q, R, Z) ->
     {X1, P1}.
 
 %% Same function as ekf/ with command input
-ekf_control({X0, P0}, {F, Jf}, {H, Jh}, Q, R, Z, U) -> 
+extended_control({X0, P0}, {F, Jf}, {H, Jh}, Q, R, Z, U) -> 
     % Prediction
     Xp = F(X0,U),
     Jfx = Jf(X0),

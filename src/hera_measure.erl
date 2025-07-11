@@ -27,7 +27,8 @@
     seq = 1 :: pos_integer(),
     iter = 1 :: non_neg_integer() | infinity,
     mod :: module(),
-    mod_state :: term()
+    mod_state :: term(),
+    sender = undefined :: pid()
 }).
 
 -define(record_to_tuplelist(Name, Rec),
@@ -52,18 +53,19 @@ init({Mod, Args}) ->
             L1 = lists:map(fun({Key, Val}) -> maps:get(Key, Spec, Val) end, L0),
             State = list_to_tuple([state|L1]),
             Seq = init_seq(State#state.name),
+            Sender_Pid = spawn_link(hera_measure_sender, init, []),
             case State#state.sync of
                 true ->
                     PidRef = subscribe(State#state.name),
                     NewState =
-                        State#state{seq=Seq,mod=Mod,mod_state=ModState,monitor=PidRef},
+                        State#state{seq=Seq,mod=Mod,mod_state=ModState,monitor=PidRef,sender=Sender_Pid},
                     loop(NewState, true);
                 false ->
-                    NewState = State#state{seq=Seq,mod=Mod,mod_state=ModState},
+                    NewState = State#state{seq=Seq,mod=Mod,mod_state=ModState,sender=Sender_Pid},
                     loop(NewState, false)
             end;
         {stop, Reason} ->
-            io:format("[HERA_MEASURE] Measure not initialized because: ~p~n", [Reason])
+            hera:logg("[HERA_MEASURE] Measure not initialized because: ~p~n", [Reason])
     end.  
     
 
@@ -106,28 +108,31 @@ init_seq(Name) ->
     lists:max([0|L]) + 1.
 
 
-measure(State=#state{name=N, mod=M, mod_state=MS, seq=Seq, iter=Iter}) ->
+measure(State=#state{name=N, mod=M, mod_state=MS, seq=Seq, iter=Iter, sender=Sender_Pid}) ->
     case M:measure(MS) of
         {undefined, NewMS} ->
-            %io:format("[HERA_MEASURE] ~p~n", [NewMS]),
             State#state{mod_state=NewMS};
         {ok, Vals=[_|_], NewMS} ->
-            %io:format("[HERA_MEASURE] ok, ~p~n", [Vals]),
-            hera_com:send(N, Seq, Vals),
+            Sender_Pid ! {N, Seq, Vals},
             NewIter = case Iter of
                 infinity -> Iter;
                 _ -> Iter-1
             end,
             State#state{seq=Seq+1, iter=NewIter, mod_state=NewMS};
         {ok, Vals=[_|_], Name, From, NewMS} ->
-            %io:format("[HERA_MEASURE] ok, ~p~n", [Vals]),
-            hera_com:send(Name, Seq, From, Vals),
+            Sender_Pid ! {Name, Seq, From, Vals},
+            NewIter = case Iter of
+                infinity -> Iter;
+                _ -> Iter-1
+            end,
+            State#state{seq=Seq+1, iter=NewIter, mod_state=NewMS};
+        {no_share, NewMS} ->
             NewIter = case Iter of
                 infinity -> Iter;
                 _ -> Iter-1
             end,
             State#state{seq=Seq+1, iter=NewIter, mod_state=NewMS};
         {stop, Reason} ->
-            io:format("[HERA_MEASURE] Stoping because : ~p~n",[Reason]),
+            hera:logg("[HERA_MEASURE] Stoping because : ~p~n",[Reason]),
             State#state{seq=Seq+1, iter=0, mod_state=MS}
     end.

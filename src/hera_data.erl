@@ -50,7 +50,7 @@ get(Name, Node) ->
     Values :: [number(), ...].
 
 store(Name, Node, Seq, Values) ->
-    io:format("[HERA_DATA] Storing ~p, ~p, ~p, ~p~n",[Name, Node, Seq, Values]),
+    hera:logg("[HERA_DATA] Storing ~p, ~p, ~p, ~p~n",[Name, Node, Seq, Values]),
     gen_server:cast(?MODULE, {store, Name, Node, Seq, Values}).
 
 reset() ->
@@ -127,6 +127,7 @@ file_name(Name, Node) ->
 
 log_data(_, _, false) ->
     ok;
+
 log_data(File, {Seq, T, Ms}, true) ->
     Vals = lists:map(fun(V) -> lists:flatten(io_lib:format("~p", [V])) end, Ms),
     S = string:join(Vals, ","),

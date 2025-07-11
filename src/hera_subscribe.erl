@@ -9,11 +9,11 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 subscribe(Pid) ->
-    io:format("[HERA_SUBSCRIBE] New subscriber ~p~n",[Pid]),
+    hera:logg("[HERA_SUBSCRIBE] New subscriber ~p~n",[Pid]),
     gen_server:call(?MODULE, {subscribe, Pid}).
 
 notify(Msg) ->
-    %io:format("[HERA_SUBSCRIBE] Notifying ~p~n",[Msg]),
+    hera:logg("[HERA_SUBSCRIBE] Notifying ~p~n",[Msg]),
     gen_server:cast(?MODULE, {notify, Msg}).
 
 init([]) ->
