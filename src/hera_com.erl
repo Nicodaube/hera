@@ -103,7 +103,6 @@ init() ->
     Socket = open_socket(1, 1),
     loop(Socket).
 
-
 open_socket(Delay, Attempts) ->
     try open_socket()
     catch
@@ -148,7 +147,8 @@ loop(Socket) ->
                     handle_string_packet(binary_to_list(Packet));
                 {hera_data, Name, From, Seq, Values} ->                     
                     hera_data:store(Name, From, Seq, Values)
-            end;
+            end,
+            loop(Socket);
         {send_packet, Packet} ->
             Multicast_enabled = persistent_term:get(multicast),
             if 
@@ -156,17 +156,18 @@ loop(Socket) ->
                     gen_udp:send(Socket, ?MULTICAST_ADDR, ?PORT, Packet);
                 true ->
                     [gen_udp:send(Socket, IP, Port, Packet) || {_, IP, Port} <- persistent_term:get(devices)]
-            end;
+            end,
+            loop(Socket);
         {send_packet_unicast, Name, Packet} ->
             Devices = persistent_term:get(devices),
             SelectedDevice = lists:keyfind(Name, 1, Devices),
             case SelectedDevice of
                 false -> hera:logg("[HERA_COM] Unregistered Device : ~p~n", [Name]);
                 {_, IP, Port} -> gen_udp:send(Socket, IP, Port, Packet)
-            end;             
-            
+            end,
+            loop(Socket);             
         _ ->
-            ok
+            loop(Socket)
     after 5000 ->
         case test_connection() of
             ok ->
