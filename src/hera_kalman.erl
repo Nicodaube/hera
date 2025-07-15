@@ -1,6 +1,6 @@
 -module(hera_kalman).
 
--export([predict/3, update/4]).
+-export([predict/3, update/4, extended_predict/3, extended_update/4]).
 -export([filter/6, extended_filter/6, extended_control/7]).
 
 %% see https://en.wikipedia.org/wiki/Kalman_filter
