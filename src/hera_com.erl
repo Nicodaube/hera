@@ -101,7 +101,15 @@ reset_devices() ->
 
 init() ->
     Socket = open_socket(1, 1),
-    loop(Socket).
+    Propag = persistent_term:get(gossip_propagation),
+    if 
+        Propag ->
+            Pid = spawn_link(fun gossip_loop/0),
+            register(gossip_loop, Pid);            
+        true ->
+            ok
+    end,
+    loop(Socket, Propag).
 
 open_socket(Delay, Attempts) ->
     try open_socket()
@@ -139,16 +147,23 @@ open_socket() ->
     hera_subscribe:notify("connected"),
     Socket.
 
-loop(Socket) ->
+loop(Socket, Propag) ->
     receive
         {udp, _Sock, _IP, _InPortNo, Packet} ->
             case catch binary_to_term(Packet) of
                 {'EXIT', _} ->
                     handle_string_packet(binary_to_list(Packet));
-                {hera_data, Name, From, Seq, Values} ->                     
-                    hera_data:store(Name, From, Seq, Values)
+                {hera_data, Name, From, Seq, Values} -> 
+                    hera_data:store(Name, From, Seq, Values),
+                    if 
+                        Propag ->
+                            Goss = persistent_term:get(hera_gossip),
+                            Goss ! {hera_data, Name, From, Seq, Values};
+                        true ->
+                            ok
+                    end
             end,
-            loop(Socket);
+            loop(Socket, Propag);
         {send_packet, Packet} ->
             Multicast_enabled = persistent_term:get(multicast),
             if 
@@ -157,7 +172,7 @@ loop(Socket) ->
                 true ->
                     [gen_udp:send(Socket, IP, Port, Packet) || {_, IP, Port} <- persistent_term:get(devices)]
             end,
-            loop(Socket);
+            loop(Socket, Propag);
         {send_packet_unicast, Name, Packet} ->
             Devices = persistent_term:get(devices),
             SelectedDevice = lists:keyfind(Name, 1, Devices),
@@ -165,16 +180,16 @@ loop(Socket) ->
                 false -> hera:logg("[HERA_COM] Unregistered Device : ~p~n", [Name]);
                 {_, IP, Port} -> gen_udp:send(Socket, IP, Port, Packet)
             end,
-            loop(Socket);             
+            loop(Socket, Propag);             
         _ ->
-            loop(Socket)
+            loop(Socket, Propag)
     after 5000 ->
         case test_connection() of
             ok ->
-                loop(Socket);
+                loop(Socket, Propag);
             error ->
                 New_Socket = restart(Socket),
-                loop(New_Socket)
+                loop(New_Socket, Propag)
         end
     end.
     
@@ -224,3 +239,10 @@ dec_hf(Half_Float) ->
 	C = ((Y bsl 2) band 252),
 	binary_to_term(<<131,70,A,B,C,0,0,0,0,0>>).
 
+gossip_loop() ->
+    receive
+        {hera_data, Name, From, Seq, Values} ->
+            hera_com:send(Name, Seq, From, Values);
+        Msg ->
+            hera:logg("[HERA_COM] Gossip received strange message ~p~n", Msg)
+    end.

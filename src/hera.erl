@@ -48,7 +48,7 @@ start(_StartType, _StartArgs) ->
     persistent_term:put(debugMode, Debug),
     io:format("[HERA] DebugMode: ~p~n",[Debug]),
 
-    Gossip = application:get_env(hera, propagation, false),
+    Gossip = application:get_env(hera, gossip_propagation, false),
     persistent_term:put(gossip_propagation, Gossip),
     hera:logg("[HERA] Gossip Propagation: ~p~n", [Gossip]),
 
