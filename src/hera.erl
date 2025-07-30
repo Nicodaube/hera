@@ -43,16 +43,15 @@ logg(Message, Args) ->
 
 start(_StartType, _StartArgs) ->
     io:format("[HERA] Startup~n"),
-    Args = application:get_env(hera, startup_args, [false]),
-    io:format("~p", [Args]),
-    case Args of 
-        [true] ->
-            persistent_term:put(debugMode, true),
-            hera:logg("[HERA] DebugMode on~n", []);
-        _ ->
-            persistent_term:put(debugMode, false),
-            ok
-    end,    
+    
+    Debug = application:get_env(hera, debugmode, false),
+    persistent_term:put(debugMode, Debug),
+    io:format("[HERA] DebugMode: ~p~n",[Debug]),
+
+    Gossip = application:get_env(hera, propagation, false),
+    persistent_term:put(gossip_propagation, Gossip),
+    hera:logg("[HERA] Gossip Propagation: ~p~n", [Gossip]),
+
     hera_sup:start_link().
 
 stop(_State) ->
