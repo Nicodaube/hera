@@ -102,13 +102,6 @@ reset_devices() ->
 init() ->
     Socket = open_socket(1, 1),
     Propag = persistent_term:get(gossip_propagation),
-    if 
-        Propag ->
-            Pid = spawn_link(fun gossip_loop/0),
-            register(gossip_loop, Pid);            
-        true ->
-            ok
-    end,
     loop(Socket, Propag).
 
 open_socket(Delay, Attempts) ->
@@ -159,8 +152,7 @@ loop(Socket, Propag) ->
                             case hera_data:is_new_data(Name, From, Seq) of
                                 true ->
                                     hera_data:store(Name, From, Seq, Values),
-                                    Goss = persistent_term:get(gossip_propagation),
-                                    Goss ! {hera_data, Name, From, Seq, Values}; 
+                                    gossip_loop({hera_data, Name, From, Seq, Values}); 
                                 false ->
                                     ok
                             end;
@@ -244,10 +236,5 @@ dec_hf(Half_Float) ->
 	C = ((Y bsl 2) band 252),
 	binary_to_term(<<131,70,A,B,C,0,0,0,0,0>>).
 
-gossip_loop() ->
-    receive
-        {hera_data, Name, From, Seq, Values} ->
-            hera_com:send(Name, Seq, From, Values);
-        Msg ->
-            hera:logg("[HERA_COM] Gossip received strange message ~p~n", Msg)
-    end.
+gossip_loop({hera_data, Name, Seq, From, Values}) ->
+    send(Name, Seq, From, Values).
