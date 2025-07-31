@@ -154,13 +154,18 @@ loop(Socket, Propag) ->
                 {'EXIT', _} ->
                     handle_string_packet(binary_to_list(Packet));
                 {hera_data, Name, From, Seq, Values} -> 
-                    hera_data:store(Name, From, Seq, Values),
-                    if 
-                        Propag ->
-                            Goss = persistent_term:get(hera_gossip),
-                            Goss ! {hera_data, Name, From, Seq, Values};
+                    case Propag of
                         true ->
-                            ok
+                            if 
+                                hera_data:is_new_data(Name, From, Seq) ->
+                                    hera_data:store(Name, From, Seq, Values),
+                                    Goss = persistent_term:get(hera_gossip),
+                                    Goss ! {hera_data, Name, From, Seq, Values}; 
+                                true ->
+                                    ok
+                            end;
+                        _ ->
+                            hera_data:store(Name, From, Seq, Values)
                     end
             end,
             loop(Socket, Propag);

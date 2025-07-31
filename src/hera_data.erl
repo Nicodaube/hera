@@ -4,7 +4,7 @@
 
 -export([start_link/0]).
 -export([get/1, get/2]).
--export([store/4, reset/0]).
+-export([store/4, reset/0, is_new_data/3]).
 -export([init/1, handle_call/3, handle_cast/2]).
 
 -type measure() :: {node(), pos_integer(), hera:timestamp(), [number(), ...]}.
@@ -42,6 +42,8 @@ get(Name) ->
 get(Name, Node) -> 
     gen_server:call(?MODULE, {get, Name, Node}).
 
+is_new_data(Name, Node, Seq) ->
+    gen_server:call(?MODULE, {is_new_data, Name, Node, Seq}).
 
 -spec store(Name, Node, Seq, Values) -> ok when
     Name :: atom(),
@@ -51,7 +53,17 @@ get(Name, Node) ->
 
 store(Name, Node, Seq, Values) ->
     hera:logg("[HERA_DATA] Storing ~p, ~p, ~p, ~p~n",[Name, Node, Seq, Values]),
-    gen_server:cast(?MODULE, {store, Name, Node, Seq, Values}).
+    case persistent_term:get(gossip_propagation) of
+        false ->
+            gen_server:cast(?MODULE, {store, Name, Node, Seq, Values});
+        true ->
+            if
+                is_new_data(Name, Node, Seq) ->
+                    gen_server:cast(?MODULE, {store, Name, Node, Seq, Values});
+                true ->
+                    ok
+            end           
+    end.
 
 reset() ->
     gen_server:cast(?MODULE, reset).
@@ -80,6 +92,17 @@ handle_call({get, Name, Node}, _From, MapData) ->
             []
     end,
     {reply, Res, MapData};
+
+handle_call({is_new_data, Name, Node, Seq}, _From, MapData) ->
+    MapMeasure = maps:get(Name, MapData, #{}),
+    case maps:find(Node, MapMeasure) of
+        {ok, #data{seq = OldSeq}} when Seq > OldSeq ->
+            {reply, true, MapData};
+        error ->
+            {reply, true, MapData};
+        _ ->
+            {reply, false, MapData}
+    end;
 
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
