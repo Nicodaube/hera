@@ -52,15 +52,14 @@ is_new_data(Name, Node, Seq) ->
     Values :: [number(), ...].
 
 store(Name, Node, Seq, Values) ->
-    hera:logg("[HERA_DATA] Storing ~p, ~p, ~p, ~p~n",[Name, Node, Seq, Values]),
     case persistent_term:get(gossip_propagation) of
         false ->
             gen_server:cast(?MODULE, {store, Name, Node, Seq, Values});
         true ->
-            if
-                is_new_data(Name, Node, Seq) ->
-                    gen_server:cast(?MODULE, {store, Name, Node, Seq, Values});
+            case gen_server:call(?MODULE, {is_new_data, Name, Node, Seq}) of
                 true ->
+                    gen_server:cast(?MODULE, {store, Name, Node, Seq, Values});
+                false ->
                     ok
             end           
     end.
