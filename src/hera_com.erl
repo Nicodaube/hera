@@ -156,12 +156,12 @@ loop(Socket, Propag) ->
                 {hera_data, Name, From, Seq, Values} -> 
                     case Propag of
                         true ->
-                            if 
-                                hera_data:is_new_data(Name, From, Seq) ->
+                            case hera_data:is_new_data(Name, From, Seq) of
+                                true ->
                                     hera_data:store(Name, From, Seq, Values),
                                     Goss = persistent_term:get(hera_gossip),
                                     Goss ! {hera_data, Name, From, Seq, Values}; 
-                                true ->
+                                false ->
                                     ok
                             end;
                         _ ->
