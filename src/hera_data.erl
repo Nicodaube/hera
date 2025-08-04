@@ -54,10 +54,12 @@ is_new_data(Name, Node, Seq) ->
 store(Name, Node, Seq, Values) ->
     case persistent_term:get(gossip_propagation) of
         false ->
+            io:format("[HERA_DATA] Storing {~p, ~p, ~p, ~p}~n",[Name, Node, Seq, Values]),
             gen_server:cast(?MODULE, {store, Name, Node, Seq, Values});
         true ->
             case gen_server:call(?MODULE, {is_new_data, Name, Node, Seq}) of
                 true ->
+                    io:format("[HERA_DATA] Storing {~p, ~p, ~p, ~p}~n",[Name, Node, Seq, Values]),
                     gen_server:cast(?MODULE, {store, Name, Node, Seq, Values});
                 false ->
                     ok
