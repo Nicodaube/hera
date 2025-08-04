@@ -236,5 +236,5 @@ dec_hf(Half_Float) ->
 	C = ((Y bsl 2) band 252),
 	binary_to_term(<<131,70,A,B,C,0,0,0,0,0>>).
 
-gossip_loop({hera_data, Name, Seq, From, Values}) ->
+gossip_loop({hera_data, Name, From, Seq, Values}) ->
     send(Name, Seq, From, Values).
