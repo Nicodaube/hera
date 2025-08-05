@@ -96,12 +96,16 @@ handle_call({get, Name, Node}, _From, MapData) ->
 
 handle_call({is_new_data, Name, Node, Seq}, _From, MapData) ->
     MapMeasure = maps:get(Name, MapData, #{}),
+    io:format("get name : ~p~n", [MapMeasure]),
     case maps:find(Node, MapMeasure) of
         {ok, #data{seq = OldSeq}} when Seq > OldSeq ->
+            io:format("Seq greater~n"),
             {reply, true, MapData};
         error ->
+            io:format("Unnexisting data~n"),
             {reply, true, MapData};
         _ ->
+            io:format("Already exists~n"),
             {reply, false, MapData}
     end;
 

@@ -147,10 +147,13 @@ loop(Socket, Propag) ->
                 {'EXIT', _} ->
                     handle_string_packet(binary_to_list(Packet));
                 {hera_data, Name, From, Seq, Values} -> 
+                    io:format("RECU {hera_data, ~p, ~p, ~p, ~p}~n",[Name, From, Seq, Values]),
                     case Propag of
                         true ->
+                            io:format("L'ARGUMENT GOSSIP FONCTIONNE~n"),
                             case hera_data:is_new_data(Name, From, Seq) of
                                 true ->
+                                    io:format("LA FONCTION IS_NEW_DATA_FONCTIONNE"),
                                     hera_data:store(Name, From, Seq, Values),
                                     gossip_loop({hera_data, Name, From, Seq, Values}); 
                                 false ->
@@ -237,4 +240,5 @@ dec_hf(Half_Float) ->
 	binary_to_term(<<131,70,A,B,C,0,0,0,0,0>>).
 
 gossip_loop({hera_data, Name, From, Seq, Values}) ->
+    io:format("[HERA_COM] Gossip transfer : {hera_data, ~p, ~p, ~p, ~p}~n",[Name, Seq, From, Values]),
     send(Name, Seq, From, Values).
