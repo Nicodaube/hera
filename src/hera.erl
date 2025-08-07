@@ -43,10 +43,9 @@ logg(Message, Args) ->
 
 start(_StartType, _StartArgs) ->
     io:format("[HERA] Startup~n"),
-    Args = application:get_env(hera, startup_args, [false]),
-    io:format("~p", [Args]),
-    case Args of 
-        [true] ->
+    DebugMode = application:get_env(hera, debugmode, false),
+    case DebugMode of 
+        true ->
             persistent_term:put(debugMode, true),
             hera:logg("[HERA] DebugMode on~n", []);
         _ ->
