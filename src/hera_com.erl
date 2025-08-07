@@ -52,7 +52,7 @@ send_unicast(Name, Message, Type) -> % Allows to send String messages (Those mes
     ok.
     
 send_link(Name, Ip, Port, Message, Type) -> % allows to send a message to an unregistered Ip/Port address
-    hera:logg("[HERA_COM] Sending ~p to ~p~n", [Message, Name]),
+    hera:logg("[HERA_COM] Sending link ~p to ~p~n", [Message, Name]),
     NewMessage = case Type of
         "UTF8" -> Message;
         "Binary" -> term_to_binary(Message);
