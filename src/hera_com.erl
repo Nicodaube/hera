@@ -1,7 +1,7 @@
 -module(hera_com).
 
 -export([start_link/0]).
--export([send/3, send/4, send_unicast/3, add_device/3, reset_devices/0]).
+-export([send/3, send/4, send_unicast/3, send_link/5, add_device/3, reset_devices/0]).
 -export([encode_half_float/1,decode_half_float/1]).
 -export([get_bits/1]).
 
@@ -33,8 +33,7 @@ send(Name, Seq, Values) ->
     end,
     ok.
 
-send(Name, Seq, From, Values) ->
-    % To use when wanting to use personalized naming
+send(Name, Seq, From, Values) ->  % To use when wanting to use personalized naming
     Message = {hera_data, Name, From, Seq, Values},
     try ?MODULE ! {send_packet, term_to_binary(Message)}
     catch
@@ -42,7 +41,7 @@ send(Name, Seq, From, Values) ->
     end,
     ok.
 
-send_unicast(Name, Message, Type) ->
+send_unicast(Name, Message, Type) -> % Allows to send String messages (Those messages will be notified by hera_subscribe)
     hera:logg("[HERA_COM] Sending ~p to ~p~n", [Message, Name]),
     NewMessage = case Type of
         "UTF8" -> Message;
@@ -52,6 +51,15 @@ send_unicast(Name, Message, Type) ->
     ?MODULE ! {send_packet_unicast, Name, NewMessage},
     ok.
     
+send_link(Name, Ip, Port, Message, Type) -> % allows to send a message to an unregistered Ip/Port address
+    hera:logg("[HERA_COM] Sending link ~p to ~p~n", [Message, Name]),
+    NewMessage = case Type of
+        "UTF8" -> Message;
+        "Binary" -> term_to_binary(Message);
+        _ -> Message
+    end,
+    ?MODULE ! {send_packet_unicast, Ip, Port, NewMessage},
+    ok.
 
 %
 %Returns a list of each bit in the byte given by Byte
@@ -165,7 +173,10 @@ loop(Socket) ->
                 false -> hera:logg("[HERA_COM] Unregistered Device : ~p~n", [Name]);
                 {_, IP, Port} -> gen_udp:send(Socket, IP, Port, Packet)
             end,
-            loop(Socket);             
+            loop(Socket);   
+        {send_packet_unicast, Ip, Port, Packet} ->      
+            gen_udp:send(Socket, Ip, Port, Packet),
+            loop(Socket);    
         _ ->
             loop(Socket)
     after 5000 ->
